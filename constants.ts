@@ -4,13 +4,10 @@ import { Quote, Track } from './types';
 // Playlist focusing on Faccianuvola and Kerala Dust
 // NOTE: For standalone deployment, place these files in an 'audio' folder
 export const PLAYLIST: Track[] = [
-  { title: 'Turchese', artist: 'Faccianuvola', src: './audio/turchese.mp3' },
   { title: 'Nevada', artist: 'Kerala Dust', src: './audio/nevada.mp3' },
-  { title: 'Le Piante', artist: 'Faccianuvola', src: './audio/le_piante.mp3' },
-  { title: 'Pulse VI', artist: 'Kerala Dust', src: './audio/pulse_vi.mp3' },
-  { title: 'Maria', artist: 'Kerala Dust', src: './audio/maria.mp3' },
-  { title: 'Moon', artist: 'Kerala Dust', src: './audio/moon.mp3' },
-  { title: 'Night Bell', artist: 'Kerala Dust', src: './audio/night_bell.mp3' }
+  { title: 'Verticale', artist: 'Faccianuvola', src: './audio/faccianuvola_verticale.mp3' },
+  { title: 'Primavera', artist: 'Faccianuvola', src: './audio/faccianuvola_primavera.mp3' },
+  { title: 'Closer', artist: 'Kerala Dust', src: './audio/closer.mp3' }
 ];
 
 export const QUOTES: Quote[] = [

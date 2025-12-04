@@ -26,7 +26,8 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist }) => {
       
       if (isPlaying) {
         audioRef.current.play().catch(e => {
-            console.error("Playback error:", e);
+            // Avoid logging full event object to prevent circular JSON errors
+            console.warn(`Playback prevented or error for: ${currentTrack.src}`);
             setError(true);
             setIsPlaying(false);
         });
@@ -41,7 +42,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist }) => {
         const playPromise = audioRef.current.play();
         if (playPromise !== undefined) {
           playPromise.catch(e => {
-            console.error("Play prevented:", e);
+            console.warn("Play prevented");
             setIsPlaying(false);
           });
         }
@@ -56,10 +57,12 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist }) => {
   };
 
   const handleError = () => {
+    // Avoid logging event object 'e'
+    console.error(`Audio Source Error for file: ${currentTrack.src}`);
     setError(true);
     // Auto skip after 2 seconds if file missing
     setTimeout(() => {
-       if (error) nextTrack(); 
+       nextTrack(); 
     }, 2000);
   };
 

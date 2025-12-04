@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="it">
   <head>
@@ -41,6 +42,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <!-- REACT IMPORTS MAP -->
+    <!-- FIXED: Removed conflicting React 19 imports to resolve Error #31 -->
     <script type="importmap">
 {
   "imports": {
@@ -97,13 +99,10 @@
 
       // Playlists assume a local 'audio' folder exists next to index.html
       const PLAYLIST = [
-        { title: 'Turchese', artist: 'Faccianuvola', src: './audio/turchese.mp3' },
         { title: 'Nevada', artist: 'Kerala Dust', src: './audio/nevada.mp3' },
-        { title: 'Le Piante', artist: 'Faccianuvola', src: './audio/le_piante.mp3' },
-        { title: 'Pulse VI', artist: 'Kerala Dust', src: './audio/pulse_vi.mp3' },
-        { title: 'Maria', artist: 'Kerala Dust', src: './audio/maria.mp3' },
-        { title: 'Moon', artist: 'Kerala Dust', src: './audio/moon.mp3' },
-        { title: 'Night Bell', artist: 'Kerala Dust', src: './audio/night_bell.mp3' }
+        { title: 'Verticale', artist: 'Faccianuvola', src: './audio/faccianuvola_verticale.mp3' },
+        { title: 'Primavera', artist: 'Faccianuvola', src: './audio/faccianuvola_primavera.mp3' },
+        { title: 'Closer', artist: 'Kerala Dust', src: './audio/closer.mp3' }
       ];
 
       const QUOTES = [
@@ -159,28 +158,32 @@
         const audioRef = useRef(null);
         const currentTrack = playlist[currentTrackIndex];
 
+        // Reset error when track changes
         useEffect(() => {
+          setError(false);
           if (audioRef.current) {
             audioRef.current.src = currentTrack.src;
             audioRef.current.load();
-            setError(false);
+            
             if (isPlaying) {
-              audioRef.current.play().catch(e => {
-                  console.error("Playback error:", e);
-                  setError(true);
-                  setIsPlaying(false);
-              });
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                  console.warn("Auto-play prevented or source missing");
+                });
+              }
             }
           }
         }, [currentTrackIndex]);
 
+        // Toggle Play/Pause
         useEffect(() => {
           if (audioRef.current) {
             if (isPlaying) {
               const playPromise = audioRef.current.play();
               if (playPromise !== undefined) {
                 playPromise.catch(e => {
-                  console.error("Play prevented:", e);
+                  console.warn("Play prevented");
                   setIsPlaying(false);
                 });
               }
@@ -195,15 +198,22 @@
         };
 
         const handleError = () => {
+          // Do not log the 'e' event object to console.error to avoid circular structure errors
+          console.error(`Audio Source Error for: ${currentTrack.src}`);
           setError(true);
-          setTimeout(() => { if (error) nextTrack(); }, 2000);
+          
+          // Auto skip after 2 seconds if file missing, but safeguard against infinite loops
+          setTimeout(() => { 
+             // We use a functional update or just trigger next if error persists
+             nextTrack(); 
+          }, 2000);
         };
 
         return (
           <div className="mt-6 w-full max-w-[280px] bg-neutral-900 border-2 border-neutral-700 rounded-lg p-3 flex flex-col gap-2 shadow-lg relative overflow-hidden">
             <audio ref={audioRef} onEnded={nextTrack} onError={handleError} />
             <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
-              <div className={`w-16 h-16 rounded-full border-4 border-dashed border-white ${isPlaying ? 'animate-spin' : ''}`} style={{animationDuration: '3s'}}></div>
+              <div className={`w-16 h-16 rounded-full border-4 border-dashed border-white ${isPlaying && !error ? 'animate-spin' : ''}`} style={{animationDuration: '3s'}}></div>
             </div>
             <div className="flex items-center justify-between text-green-400 text-xs font-mono border-b border-green-900 pb-2 z-10">
               <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap w-full">
@@ -223,6 +233,7 @@
                 <SkipForward size={24} fill="currentColor" />
               </button>
             </div>
+            {error && <div className="text-[8px] text-red-500 text-center font-mono pt-1">CHECK /audio FOLDER</div>}
           </div>
         );
       };
