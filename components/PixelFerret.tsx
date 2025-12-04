@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GameState } from '../types';
 
@@ -16,7 +17,7 @@ const PixelFerret: React.FC<PixelFerretProps> = ({ state, frame }) => {
   const G = '#556B2F'; // Dark Olive Green (Sick/Dead)
   const T = 'transparent';
 
-  // Helper to render pixel rows
+  // Helper to render pixels
   const renderPixels = (pixels: string[]) => {
     return pixels.map((row, y) => (
       row.split('').map((colorCode, x) => {
@@ -99,9 +100,9 @@ const PixelFerret: React.FC<PixelFerretProps> = ({ state, frame }) => {
     "TTTTTDDTTTTTTTTT",
     "TTTTDCCDTTTTTTTT",
     "TTTDBCBDTTTTTTTT",
-    "TTTDCBDDTTTTTTTT", // Mouth open/chew
+    "TTTDCBDDTTTTTTTT",
     "TTTTDDCDDTTTTTTT",
-    "TTTTTCCCDTTGTTTT", // Food eaten
+    "TTTTTCCCDTTGTTTT",
     "TTTTTCCCCDDDDTTT",
     "TTTTTCCCCCCCCDTT",
     "TTTTTCCCCCCCDTTT",
@@ -119,7 +120,7 @@ const PixelFerret: React.FC<PixelFerretProps> = ({ state, frame }) => {
     "TTTTTTTTTTTTTTTT",
     "TTTTTTTTTTTDDTTT",
     "TTTTTTTTTTDCCDTT",
-    "TTTTTTTTTDXXBDTT", // X eyes
+    "TTTTTTTTTDXXBDTT",
     "TTTTTTTTDCBDDTTT",
     "TTDDDDDCDDDTTTTT",
     "TDGCCCCCCGGDTTTT",
@@ -167,6 +168,46 @@ const PixelFerret: React.FC<PixelFerretProps> = ({ state, frame }) => {
     "TTTTTTTTTTTTTTTT"
   ];
 
+  // Yoga Pose: Sitting straight, arms out (Zen)
+  const yoga1 = [
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTDDTTTTTTTTT",
+    "TTTTDCCDTTTTTTTT",
+    "TTTDBCBDTTTTTTTT", // Eyes closed (simulated by same face for now, maybe add eyelids)
+    "TTTDCBDDTTTTTTTT",
+    "TTTTDDCDDTTTTTTT",
+    "TTTTTCCCDTTTTTTT",
+    "TTTTDCCCCDTTTTTT", // Arms in
+    "TTTTDCCCCDTTTTTT",
+    "TTTDDCCCCDDTTTTT", // Legs crossed base
+    "TTTTDDDDDDTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT"
+  ];
+
+   const yoga2 = [
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTDDTTTTTTTTT",
+    "TTTTDCCDTTTTTTTT",
+    "TTTDBCBDTTTTTTTT",
+    "TTTDCBDDTTTTTTTT",
+    "TTTTDDCDDTTTTTTT",
+    "TTTTTCCCDTTTTTTT",
+    "TTTTDCCCCDTTTTTT",
+    "TTTTDCCCCDTTTTTT",
+    "TTTDDCCCCDDTTTTT",
+    "TTTTDDDDDDTTTTTT", // Levitate 1px? No, just breath (no change or subtle)
+    "TTTTTTTTTTTTTTTT",
+    "TTTTTTTTTTTTTTTT"
+  ];
+
+
   let currentMap = idle1;
 
   if (state === GameState.DEAD) {
@@ -175,8 +216,9 @@ const PixelFerret: React.FC<PixelFerretProps> = ({ state, frame }) => {
     currentMap = frame ? eat1 : eat2;
   } else if (state === GameState.SLEEPING) {
     currentMap = frame ? sleep1 : sleep2;
+  } else if (state === GameState.YOGA) {
+    currentMap = yoga1; // Static zen
   } else {
-    // Idle, Playing, Pooping (use idle for now, poop renders separately)
     currentMap = frame ? idle1 : idle2;
   }
 

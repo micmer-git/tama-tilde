@@ -5,7 +5,8 @@ export enum GameState {
   SLEEPING = 'SLEEPING',
   POOPING = 'POOPING',
   DEAD = 'DEAD',
-  PLAYING = 'PLAYING'
+  PLAYING = 'PLAYING',
+  YOGA = 'YOGA'
 }
 
 export enum FoodType {
@@ -21,9 +22,11 @@ export interface Quote {
 }
 
 export interface Stats {
-  hunger: number; // 0-100 (100 is full)
-  happiness: number; // 0-100 (100 is happy)
-  energy: number; // 0-100 (100 is rested)
+  hunger: number; // 0-100
+  happiness: number; // 0-100
+  energy: number; // 0-100
+  caffeine: number; // 0-100 (New)
+  relax: number; // 0-100 (New)
   poopCount: number;
 }
 

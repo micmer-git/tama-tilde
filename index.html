@@ -3,7 +3,9 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Furetto Pixel</title>
+    <title>Furetto Pixel - BitLove</title>
+    
+    <!-- STYLES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
@@ -11,49 +13,541 @@
         font-family: 'Press Start 2P', monospace;
         background-color: #2d2d2d;
         touch-action: manipulation;
-        overflow: hidden; /* Prevent scrolling on mobile pull-to-refresh */
+        overflow: hidden;
+        user-select: none;
       }
-      /* Custom Scrollbar for lists */
-      ::-webkit-scrollbar {
-        width: 8px;
+      /* Custom Scrollbar */
+      ::-webkit-scrollbar { width: 4px; }
+      ::-webkit-scrollbar-track { background: #9ea792; }
+      ::-webkit-scrollbar-thumb { background: #4a5043; }
+      
+      .text-shadow-glow {
+        text-shadow: 0 0 10px rgba(255,182,193,0.5), 0 0 20px rgba(255,182,193,0.3);
       }
-      ::-webkit-scrollbar-track {
-        background: #9ea792; 
+      .marquee {
+        display: inline-block;
+        animation: scroll-left 10s linear infinite;
       }
-      ::-webkit-scrollbar-thumb {
-        background: #4a5043; 
-        border: 1px solid #9ea792;
+      @keyframes scroll-left {
+        0% { transform: translateX(100%); }
+        100% { transform: translateX(-100%); }
       }
-      @keyframes scanline {
-        0% { transform: translateY(0); }
-        100% { transform: translateY(100vh); }
-      }
-      .scanline::after {
-        content: " ";
-        display: block;
-        position: absolute;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-        background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-        z-index: 2;
-        background-size: 100% 2px, 3px 100%;
-        pointer-events: none;
+      .rendering-pixelated {
+        image-rendering: pixelated;
       }
     </style>
-  <script type="importmap">
+
+    <!-- BABEL STANDALONE FOR BROWSER JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- REACT IMPORTS MAP -->
+    <script type="importmap">
 {
   "imports": {
-    "react/": "https://aistudiocdn.com/react@^19.2.1/",
-    "react": "https://aistudiocdn.com/react@^19.2.1",
+    "react": "https://esm.sh/react@18.2.0",
+    "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+    "lucide-react": "https://esm.sh/lucide-react@0.294.0",
     "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.1/",
-    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.555.0"
+    "react/": "https://aistudiocdn.com/react@^19.2.1/"
   }
 }
 </script>
-</head>
+  </head>
   <body>
     <div id="root"></div>
+
+    <!-- MAIN APP SCRIPT -->
+    <script type="text/babel" data-type="module">
+      import React, { useState, useEffect, useRef } from 'react';
+      import ReactDOM from 'react-dom/client';
+      import { 
+        Utensils, Zap, Heart, Trash2, Moon, MessageSquare, 
+        Battery, Coffee, Smile, ChevronUp, ChevronDown,
+        Play, Pause, SkipForward, Music, AlertCircle
+      } from 'lucide-react';
+
+      // --- CONSTANTS & TYPES ---
+
+      const USER_NAME = "Tilde";
+
+      const GameState = {
+        IDLE: 'IDLE',
+        EATING: 'EATING',
+        SLEEPING: 'SLEEPING',
+        POOPING: 'POOPING',
+        DEAD: 'DEAD',
+        PLAYING: 'PLAYING',
+        YOGA: 'YOGA'
+      };
+
+      const FoodType = {
+        AVOCADO: 'Avocado',
+        UOVA_PEPE: 'Uova e Pepe',
+        CAFFE: 'Caffè'
+      };
+
+      const INITIAL_STATS = {
+        hunger: 100,
+        happiness: 100,
+        energy: 100,
+        caffeine: 80,
+        relax: 80,
+        poopCount: 0
+      };
+
+      // Playlists assume a local 'audio' folder exists next to index.html
+      const PLAYLIST = [
+        { title: 'Turchese', artist: 'Faccianuvola', src: './audio/turchese.mp3' },
+        { title: 'Nevada', artist: 'Kerala Dust', src: './audio/nevada.mp3' },
+        { title: 'Le Piante', artist: 'Faccianuvola', src: './audio/le_piante.mp3' },
+        { title: 'Pulse VI', artist: 'Kerala Dust', src: './audio/pulse_vi.mp3' },
+        { title: 'Maria', artist: 'Kerala Dust', src: './audio/maria.mp3' },
+        { title: 'Moon', artist: 'Kerala Dust', src: './audio/moon.mp3' },
+        { title: 'Night Bell', artist: 'Kerala Dust', src: './audio/night_bell.mp3' }
+      ];
+
+      const QUOTES = [
+        { text: "Tilde, tutto questo è per te.", source: "System", category: "nerd" },
+        { text: "Tilde, hai portato l'avocado?", source: "Furetto", category: "lyric" },
+        { text: "Tilde, il server è freddo stasera.", source: "Furetto", category: "nerd" },
+        { text: "Ciao Tilde, sei reale o sei un render?", source: "Furetto", category: "design" },
+        { text: "Tutto si muove, ma io resto fermo qui.", source: "Faccianuvola", category: "lyric" },
+        { text: "Le piante crescono anche senza di noi.", source: "Faccianuvola", category: "lyric" },
+        { text: "Ho perso il conto dei giorni in questa stanza blu.", source: "Faccianuvola", category: "lyric" },
+        { text: "Respirare piano per non fare rumore.", source: "Faccianuvola", category: "lyric" },
+        { text: "La città è vuota, o sono io che non ci sono?", source: "Faccianuvola", category: "lyric" },
+        { text: "Siamo solo pixel in un render sbagliato.", source: "Faccianuvola", category: "lyric" },
+        { text: "Cercami dove non c'è connessione.", source: "Faccianuvola", category: "lyric" },
+        { text: "Il caffè è freddo, come le tue risposte.", source: "Faccianuvola", category: "lyric" },
+        { text: "Vorrei essere un file da cancellare.", source: "Faccianuvola", category: "lyric" },
+        { text: "Luci al neon che tagliano la nebbia.", source: "Faccianuvola", category: "lyric" },
+        { text: "The moon is a heavy thing to carry.", source: "Kerala Dust", category: "lyric" },
+        { text: "Shake off the dust.", source: "Kerala Dust", category: "lyric" },
+        { text: "Late night, Berlin lights.", source: "Kerala Dust", category: "lyric" },
+        { text: "Pulse ticking like a clock.", source: "Kerala Dust", category: "lyric" },
+        { text: "Da cosa nasce cosa.", source: "Bruno Munari", category: "design" },
+        { text: "Less is more, ma l'avocado è extra.", source: "Mies / Design Pop", category: "design" },
+        { text: "La forma segue la funzione, o la colazione?", source: "Sullivan (remix)", category: "design" },
+        { text: "Il design è l'anima di un oggetto creato dall'uomo.", source: "Steve Jobs (Olivetti style)", category: "design" },
+        { text: "Sottrazione di peso.", source: "Italo Calvino", category: "design" },
+        { text: "Non è cemento, è brutalismo emotivo.", source: "Architettura Ita", category: "design" },
+        { text: "Superstudio aveva ragione: la vita è un render.", source: "Radical Design", category: "design" },
+        { text: "Memphis Milano: colori contro il grigiore.", source: "Ettore Sottsass", category: "design" },
+        { text: "Un computer in ogni casa? Magari un furetto.", source: "Olivetti vision", category: "design" },
+        { text: "Grafica è rendere memorabile l'utile.", source: "Vignelli", category: "design" },
+        { text: "L'architettura è un fatto d'arte.", source: "Gio Ponti", category: "design" },
+        { text: "I've seen things you people wouldn't believe...", source: "Blade Runner", category: "nerd" },
+        { text: "So long, and thanks for all the fish.", source: "Hitchhiker's Guide", category: "nerd" },
+        { text: "It's dangerous to go alone! Take this.", source: "Zelda", category: "nerd" },
+        { text: "The cake is a lie.", source: "Portal", category: "nerd" },
+        { text: "42.", source: "Hitchhiker's Guide", category: "nerd" },
+        { text: "Do, or do not. There is no try.", source: "Yoda", category: "nerd" },
+        { text: "A glitch in the matrix.", source: "The Matrix", category: "nerd" },
+        { text: "Siamo fatti della stessa sostanza dei sogni.", source: "Shakespeare / Tempest", category: "nerd" },
+        { text: "Who watches the Watchmen?", source: "Moore", category: "nerd" },
+        { text: "Hello World.", source: "Programming", category: "nerd" },
+        { text: "Have you tried turning it off and on again?", source: "IT Crowd", category: "nerd" }
+      ];
+
+      // --- COMPONENTS ---
+
+      // 1. MUSIC PLAYER
+      const MusicPlayer = ({ playlist }) => {
+        const [isPlaying, setIsPlaying] = useState(false);
+        const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+        const [error, setError] = useState(false);
+        const audioRef = useRef(null);
+        const currentTrack = playlist[currentTrackIndex];
+
+        useEffect(() => {
+          if (audioRef.current) {
+            audioRef.current.src = currentTrack.src;
+            audioRef.current.load();
+            setError(false);
+            if (isPlaying) {
+              audioRef.current.play().catch(e => {
+                  console.error("Playback error:", e);
+                  setError(true);
+                  setIsPlaying(false);
+              });
+            }
+          }
+        }, [currentTrackIndex]);
+
+        useEffect(() => {
+          if (audioRef.current) {
+            if (isPlaying) {
+              const playPromise = audioRef.current.play();
+              if (playPromise !== undefined) {
+                playPromise.catch(e => {
+                  console.error("Play prevented:", e);
+                  setIsPlaying(false);
+                });
+              }
+            } else {
+              audioRef.current.pause();
+            }
+          }
+        }, [isPlaying]);
+
+        const nextTrack = () => {
+          setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+        };
+
+        const handleError = () => {
+          setError(true);
+          setTimeout(() => { if (error) nextTrack(); }, 2000);
+        };
+
+        return (
+          <div className="mt-6 w-full max-w-[280px] bg-neutral-900 border-2 border-neutral-700 rounded-lg p-3 flex flex-col gap-2 shadow-lg relative overflow-hidden">
+            <audio ref={audioRef} onEnded={nextTrack} onError={handleError} />
+            <div className="absolute top-0 right-0 opacity-10 pointer-events-none">
+              <div className={`w-16 h-16 rounded-full border-4 border-dashed border-white ${isPlaying ? 'animate-spin' : ''}`} style={{animationDuration: '3s'}}></div>
+            </div>
+            <div className="flex items-center justify-between text-green-400 text-xs font-mono border-b border-green-900 pb-2 z-10">
+              <div className="flex items-center gap-2 overflow-hidden whitespace-nowrap w-full">
+                 {error ? <AlertCircle size={12} className="text-red-500 shrink-0" /> : <Music size={12} className={`shrink-0 ${isPlaying ? "animate-pulse" : ""}`} />}
+                 <div className="w-full overflow-hidden relative">
+                   <span className="marquee block">
+                      {error ? `FILE NOT FOUND: ${currentTrack.src}` : `${currentTrack.artist} - ${currentTrack.title}`}
+                   </span>
+                 </div>
+              </div>
+            </div>
+            <div className="flex justify-center gap-6 z-10">
+              <button onClick={() => setIsPlaying(!isPlaying)} className="text-neutral-400 hover:text-green-400 active:scale-95 transition-all">
+                {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+              </button>
+              <button onClick={nextTrack} className="text-neutral-400 hover:text-green-400 active:scale-95 transition-all">
+                <SkipForward size={24} fill="currentColor" />
+              </button>
+            </div>
+          </div>
+        );
+      };
+
+      // 2. PIXEL FERRET
+      const PixelFerret = ({ state, frame }) => {
+        const C = '#FFFDD0'; // Cream
+        const D = '#5C4033'; // Brown
+        const B = '#000000'; // Black
+        const P = '#FFB6C1'; // Pink
+        const G = '#556B2F'; // Green
+        const T = 'transparent';
+
+        const renderPixels = (pixels) => {
+          return pixels.map((row, y) => (
+            row.split('').map((colorCode, x) => {
+              let fill = T;
+              if (colorCode === 'C') fill = C;
+              if (colorCode === 'D') fill = D;
+              if (colorCode === 'B') fill = B;
+              if (colorCode === 'P') fill = P;
+              if (colorCode === 'G') fill = G;
+              if (fill === T) return null;
+              return <rect key={`${x}-${y}`} x={x} y={y} width={1} height={1} fill={fill} />;
+            })
+          ));
+        };
+
+        const idle1 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTDDTTTTTTTTT",
+          "TTTTDCCDTTTTTTTT", "TTTDBCBDTTTTTTTT", "TTTDCBDDTTTTTTTT", "TTTTDDCDDTTTTTTT",
+          "TTTTTCCCDTTTTTTT", "TTTTTCCCCDDDDTTT", "TTTTTCCCCCCCCDTT", "TTTTTCCCCCCCDTTT",
+          "TTTTDDCCCDDDTTTT", "TTTTTTDDDTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const idle2 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTDDTTTTTTTTT", "TTTTDCCDTTTTTTTT", "TTTDBCBDTTTTTTTT", "TTTDCBDDTTTTTTTT",
+          "TTTTDDCDDTTTTTTT", "TTTTTCCCDTTTTTTT", "TTTTTCCCCDDDDTTT", "TTTTTCCCCCCCCDTT",
+          "TTTTTCCCCCCCDTTT", "TTTTDDCCCDDDTTTT", "TTTTTTDDDTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const eat1 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTDDTTTTTTTTT", "TTTTDCCDTTTTTTTT", "TTTDBCBDTTTTTTTT", "TTTDCBDDTTTTGTTT",
+          "TTTTDDCDDTTGGTTT", "TTTTTCCCDTTGGTTT", "TTTTTCCCCDDDDTTT", "TTTTTCCCCCCCCDTT",
+          "TTTTTCCCCCCCDTTT", "TTTTDDCCCDDDTTTT", "TTTTTTDDDTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const eat2 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTDDTTTTTTTTT", "TTTTDCCDTTTTTTTT", "TTTDBCBDTTTTTTTT", "TTTDCBDDTTTTTTTT",
+          "TTTTDDCDDTTTTTTT", "TTTTTCCCDTTGTTTT", "TTTTTCCCCDDDDTTT", "TTTTTCCCCCCCCDTT",
+          "TTTTTCCCCCCCDTTT", "TTTTDDCCCDDDTTTT", "TTTTTTDDDTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const dead = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTDDTTT", "TTTTTTTTTTDCCDTT",
+          "TTTTTTTTTDXXBDTT", "TTTTTTTTDCBDDTTT", "TTDDDDDCDDDTTTTT", "TDGCCCCCCGGDTTTT",
+          "TDGGCCCCGGGDT TTT", "TDDDDDDDDDTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const sleep1 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTTTTTTTTTTTT", "TTTTTZZZTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTDDDDTTTTTTT",
+          "TTTTDCCCCDTTTTTT", "TTTDCCCCCDDTTTTTT", "TTDCCCCCCDTTTTTT", "TTDCCCCCDDTTTTTT",
+          "TTTDCCCDDTTTTTTT", "TTTTDDDDTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const sleep2 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTTZTTTTTTTTT", "TTTTTTZTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTDDDDTTTTTTT",
+          "TTTTDCCCCDTTTTTT", "TTTDCCCCCDDTTTTTT", "TTDCCCCCCDTTTTTT", "TTDCCCCCDDTTTTTT",
+          "TTTDCCCDDTTTTTTT", "TTTTDDDDTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+        const yoga1 = [
+          "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT",
+          "TTTTTDDTTTTTTTTT", "TTTTDCCDTTTTTTTT", "TTTDBCBDTTTTTTTT", "TTTDCBDDTTTTTTTT",
+          "TTTTDDCDDTTTTTTT", "TTTTTCCCDTTTTTTT", "TTTTDCCCCDTTTTTT", "TTTTDCCCCDTTTTTT",
+          "TTTDDCCCCDDTTTTT", "TTTTDDDDDDTTTTTT", "TTTTTTTTTTTTTTTT", "TTTTTTTTTTTTTTTT"
+        ];
+
+        let currentMap = idle1;
+        if (state === GameState.DEAD) currentMap = dead;
+        else if (state === GameState.EATING) currentMap = frame ? eat1 : eat2;
+        else if (state === GameState.SLEEPING) currentMap = frame ? sleep1 : sleep2;
+        else if (state === GameState.YOGA) currentMap = yoga1;
+        else currentMap = frame ? idle1 : idle2;
+
+        return (
+          <svg viewBox="0 0 16 16" className="w-full h-full rendering-pixelated">
+            {renderPixels(currentMap)}
+          </svg>
+        );
+      };
+
+      // 3. MAIN APP
+      const App = () => {
+        const [stats, setStats] = useState(INITIAL_STATS);
+        const [gameState, setGameState] = useState(GameState.IDLE);
+        const [menuState, setMenuState] = useState('IDLE');
+        const [menuIndex, setMenuIndex] = useState(0);
+        const [frame, setFrame] = useState(0);
+        const [message, setMessage] = useState("");
+        const [isMessageVisible, setIsMessageVisible] = useState(false);
+        const tickRef = useRef(null);
+
+        const MENU_OPTIONS = ['CIBO', 'YOGA', 'PULISCI', 'LUCE', 'PARLA', 'STATS'];
+
+        const getRandomQuote = () => QUOTES[Math.floor(Math.random() * QUOTES.length)];
+
+        const showQuote = (forcedQuote = null, duration = 4000) => {
+          if (gameState === GameState.DEAD) return;
+          let text = forcedQuote || (Math.random() < 0.4 ? `${USER_NAME}, "${getRandomQuote().text.toLowerCase()}"` : `"${getRandomQuote().text}"`);
+          setMessage(text);
+          setIsMessageVisible(true);
+          setTimeout(() => setIsMessageVisible(false), duration);
+        };
+
+        useEffect(() => {
+          tickRef.current = setInterval(() => {
+            setFrame(f => (f === 0 ? 1 : 0));
+            if (gameState !== GameState.DEAD) {
+              setStats(prev => {
+                const newCaffeine = Math.max(0, prev.caffeine - 0.04);
+                const newRelax = Math.max(0, prev.relax - 0.03);
+                const newHunger = Math.max(0, prev.hunger - 0.02);
+                
+                let newEnergy = prev.energy;
+                if (gameState === GameState.SLEEPING) newEnergy = Math.min(100, prev.energy + 2.0);
+                else {
+                   const energyDecay = newCaffeine < 20 ? 0.1 : 0.005;
+                   newEnergy = Math.max(0, prev.energy - energyDecay);
+                }
+
+                let happinessDecay = 0.02;
+                if (prev.relax < 30) happinessDecay += 0.02;
+                if (prev.poopCount > 0) happinessDecay += 0.05;
+                const newHappiness = Math.max(0, prev.happiness - happinessDecay);
+                
+                let newPoop = prev.poopCount;
+                if (prev.hunger > 20 && Math.random() < 0.001 && prev.poopCount < 4 && gameState !== GameState.SLEEPING && gameState !== GameState.YOGA) {
+                  newPoop += 1;
+                }
+
+                if (newHunger <= 0 || newHappiness <= 0 || newEnergy <= 0) {
+                  setGameState(GameState.DEAD);
+                  setMessage("System Failure.");
+                  setIsMessageVisible(true);
+                }
+
+                if (gameState === GameState.SLEEPING && newEnergy >= 100) {
+                  setGameState(GameState.IDLE);
+                  showQuote(`Buongiorno ${USER_NAME}. Serve caffè.`);
+                }
+                if (gameState === GameState.YOGA && newRelax >= 100) {
+                  setGameState(GameState.IDLE);
+                  showQuote(`Namastè, ${USER_NAME}.`);
+                }
+                
+                return { hunger: newHunger, energy: newEnergy, happiness: newHappiness, caffeine: newCaffeine, relax: newRelax, poopCount: newPoop };
+              });
+            }
+          }, 1000);
+          return () => clearInterval(tickRef.current);
+        }, [gameState]);
+
+        const handleUp = () => {
+          if (gameState === GameState.DEAD) return;
+          if (menuState === 'MAIN_MENU') setMenuIndex(prev => (prev - 1 + MENU_OPTIONS.length) % MENU_OPTIONS.length);
+          else if (menuState === 'FOOD_MENU') setMenuIndex(prev => (prev - 1 + 3) % 3);
+        };
+
+        const handleDown = () => {
+          if (gameState === GameState.DEAD) return;
+          if (menuState === 'MAIN_MENU') setMenuIndex(prev => (prev + 1) % MENU_OPTIONS.length);
+          else if (menuState === 'FOOD_MENU') setMenuIndex(prev => (prev + 1) % 3);
+        };
+
+        const handleConfirm = () => {
+          if (gameState === GameState.DEAD) return;
+          if (menuState === 'IDLE') { setMenuState('MAIN_MENU'); setMenuIndex(0); }
+          else if (menuState === 'MAIN_MENU') {
+            const selected = MENU_OPTIONS[menuIndex];
+            if (selected === 'CIBO') { setMenuState('FOOD_MENU'); setMenuIndex(0); }
+            else if (selected === 'YOGA') startYoga();
+            else if (selected === 'PULISCI') cleanPoop();
+            else if (selected === 'LUCE') toggleSleep();
+            else if (selected === 'PARLA') { setMenuState('IDLE'); showQuote(); }
+            else if (selected === 'STATS') setMenuState('STATS_VIEW');
+          }
+          else if (menuState === 'FOOD_MENU') confirmFood(menuIndex);
+          else if (menuState === 'STATS_VIEW') setMenuState('IDLE');
+        };
+
+        const handleBack = () => {
+          if (gameState === GameState.DEAD) return;
+          if (menuState === 'IDLE') {
+             if (Math.random() > 0.5) showQuote();
+             else setMenuState('STATS_VIEW');
+          } else {
+             setMenuState('IDLE');
+             setMenuIndex(0);
+          }
+        };
+
+        const confirmFood = (index) => {
+          const foods = Object.values(FoodType);
+          const selectedFood = foods[index];
+          setMenuState('IDLE');
+          setGameState(GameState.EATING);
+          setTimeout(() => {
+            setStats(prev => {
+               let newC = prev.caffeine, newH = prev.hunger, newHa = prev.happiness;
+               if (selectedFood === FoodType.CAFFE) { newC = Math.min(100, prev.caffeine + 50); newHa += 5; showQuote(`Carburante liquido. Grazie ${USER_NAME}.`); }
+               else if (selectedFood === FoodType.AVOCADO) { newH = Math.min(100, prev.hunger + 40); newHa += 10; showQuote("Grassi buoni. Ottimo."); }
+               else { newH = Math.min(100, prev.hunger + 50); newHa += 5; showQuote("Proteine."); }
+               return { ...prev, caffeine: newC, hunger: newH, happiness: Math.min(100, newHa) };
+            });
+            setGameState(GameState.IDLE);
+          }, 2000);
+        };
+
+        const startYoga = () => {
+          setMenuState('IDLE');
+          if (gameState === GameState.SLEEPING) return;
+          setGameState(GameState.YOGA);
+          showQuote("Inizio sequenza Zen...", 2000);
+          setStats(prev => ({ ...prev, relax: Math.min(100, prev.relax + 10) }));
+        };
+
+        const cleanPoop = () => {
+          setMenuState('IDLE');
+          if (stats.poopCount > 0) { setStats(prev => ({ ...prev, poopCount: 0, happiness: Math.min(100, prev.happiness + 20) })); showQuote("Minimalismo ripristinato."); }
+          else showQuote(`Tutto pulito, ${USER_NAME}.`);
+        };
+
+        const toggleSleep = () => {
+          setMenuState('IDLE');
+          if (gameState === GameState.SLEEPING) { setGameState(GameState.IDLE); showQuote("Troppa luce..."); }
+          else setGameState(GameState.SLEEPING);
+        };
+
+        const renderBar = (val, col) => (
+          <div className="w-full h-2 bg-[#8b967e] border border-[#4a5043] mt-1 relative"><div className={`h-full ${col}`} style={{ width: `${val}%` }}/></div>
+        );
+
+        return (
+          <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-900 to-indigo-900 text-neutral-200">
+            <h1 className="text-xl mb-6 text-center text-white/80 tracking-widest uppercase text-shadow-glow">Furetto <span className="text-pink-400">Pixel</span></h1>
+            
+            <div className="relative w-[320px] h-[380px] bg-[#f0f0f0] rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%] shadow-[inset_-5px_-5px_15px_rgba(0,0,0,0.1),_0_20px_40px_rgba(0,0,0,0.6)] border-4 border-[#dcdcdc] flex flex-col items-center pt-12 pb-8 overflow-hidden">
+              <div className="absolute top-6 text-[#ccc] font-bold text-xs tracking-widest">BITLOVE</div>
+              
+              <div className="w-[200px] h-[180px] bg-[#9ea792] rounded-lg shadow-[inset_3px_3px_8px_rgba(0,0,0,0.3)] border-4 border-[#8b967e] relative p-1 flex flex-col justify-between">
+                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] z-20"></div>
+                
+                <div className="flex-1 relative flex flex-col items-center justify-center z-10 w-full h-full overflow-hidden">
+                  {menuState === 'STATS_VIEW' ? (
+                    <div className="w-full h-full p-2 text-[#2d3129] font-mono text-[8px] flex flex-col gap-1">
+                      <div className="text-center border-b border-[#2d3129] mb-1">STATUS SYSTEM</div>
+                      <div className="flex items-center gap-1"><Utensils size={8} /> FAME <div className="flex-1">{renderBar(stats.hunger, 'bg-green-700')}</div></div>
+                      <div className="flex items-center gap-1"><Heart size={8} /> FELICITÀ <div className="flex-1">{renderBar(stats.happiness, 'bg-pink-700')}</div></div>
+                      <div className="flex items-center gap-1"><Battery size={8} /> ENERGIA <div className="flex-1">{renderBar(stats.energy, 'bg-yellow-700')}</div></div>
+                      <div className="flex items-center gap-1"><Coffee size={8} /> CAFFEINA <div className="flex-1">{renderBar(stats.caffeine, 'bg-amber-900')}</div></div>
+                      <div className="flex items-center gap-1"><Smile size={8} /> RELAX <div className="flex-1">{renderBar(stats.relax, 'bg-blue-700')}</div></div>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="absolute top-1 left-1 right-1 flex justify-between text-[#4a5043] opacity-60">
+                         {gameState === GameState.SLEEPING && <Moon size={8} />}
+                         {stats.caffeine < 20 && <Coffee size={8} className="animate-pulse text-red-800" />}
+                         {stats.relax < 20 && <div className="text-[8px] animate-pulse">STRESS</div>}
+                      </div>
+                      {isMessageVisible && (
+                        <div className="absolute top-4 w-[90%] bg-[#4a5043] text-[#9ea792] p-2 text-[8px] leading-tight text-center border border-[#2d3129] shadow-md z-30">{message}</div>
+                      )}
+                      <div className={`w-32 h-32 relative transition-opacity ${menuState !== 'IDLE' ? 'opacity-20' : 'opacity-100'}`}>
+                        <PixelFerret state={gameState} frame={frame} />
+                        {stats.poopCount > 0 && <div className="absolute bottom-2 right-0 text-xl animate-pulse">💩</div>}
+                      </div>
+                      {menuState !== 'IDLE' && (
+                        <div className="absolute inset-0 flex items-center justify-center z-40">
+                          <div className="bg-[#9ea792] border-2 border-[#4a5043] p-1 w-[80%] shadow-[4px_4px_0px_rgba(0,0,0,0.2)]">
+                            <ul className="text-[10px] text-[#2d3129] font-bold">
+                              {(menuState === 'MAIN_MENU' ? MENU_OPTIONS : Object.values(FoodType)).map((opt, i) => (
+                                <li key={opt} className={`px-2 py-1 ${i === menuIndex ? 'bg-[#4a5043] text-[#9ea792]' : ''}`}>
+                                  {i === menuIndex ? '> ' : '  '}{opt}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex justify-between w-[240px] mt-6 px-2">
+                <div className="flex flex-col gap-2 justify-center">
+                   <button onClick={handleUp} className="w-8 h-8 bg-neutral-800 rounded flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400"><ChevronUp size={16} /></button>
+                   <button onClick={handleDown} className="w-8 h-8 bg-neutral-800 rounded flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400"><ChevronDown size={16} /></button>
+                </div>
+                <div className="flex gap-4 items-end mb-2 rotate-[-10deg]">
+                   <div className="flex flex-col items-center gap-1 translate-y-4">
+                       <button onClick={handleBack} className="w-10 h-10 bg-red-600 rounded-full shadow-[0_4px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-xs">B</button>
+                       <span className="text-[8px] font-bold text-gray-400">BACK</span>
+                   </div>
+                   <div className="flex flex-col items-center gap-1">
+                       <button onClick={handleConfirm} className="w-10 h-10 bg-blue-600 rounded-full shadow-[0_4px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-xs">A</button>
+                       <span className="text-[8px] font-bold text-gray-400">OK</span>
+                   </div>
+                </div>
+              </div>
+            </div>
+
+            <MusicPlayer playlist={PLAYLIST} />
+
+            <div className="mt-8 text-[8px] text-gray-500 text-center max-w-xs">
+              <p>A: Confirm / Menu &bull; B: Back / Stats</p>
+              <p>Up/Down: Navigate</p>
+            </div>
+          </div>
+        );
+      };
+
+      // MOUNT
+      const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
   </body>
 </html>
