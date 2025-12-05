@@ -9,24 +9,25 @@ export enum GameState {
   YOGA = 'YOGA'
 }
 
-export enum FoodType {
-  AVOCADO = 'Avocado',
-  UOVA_PEPE = 'Uova e Pepe',
-  CAFFE = 'Caffè'
+export enum Location {
+  BERGAMO = 'BERGAMO',
+  GREECE = 'GREECE',
+  VILLA_PANZA = 'VILLA_PANZA'
 }
 
 export interface Quote {
   text: string;
   source: string;
-  category: 'lyric' | 'nerd' | 'design';
+  // Category maps to locations: 'faccianuvola'->Bergamo, 'kerala'->Greece, 'panza'->Villa Panza, 'system'->Anywhere
+  category: 'faccianuvola' | 'kerala' | 'panza' | 'system'; 
 }
 
 export interface Stats {
   hunger: number; // 0-100
   happiness: number; // 0-100
-  energy: number; // 0-100
-  caffeine: number; // 0-100 (New)
-  relax: number; // 0-100 (New)
+  // Energy removed as per request
+  caffeine: number; // 0-100
+  relax: number; // 0-100
   poopCount: number;
 }
 

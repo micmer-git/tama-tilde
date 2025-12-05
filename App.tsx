@@ -2,24 +2,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import PixelFerret from './components/PixelFerret';
 import MusicPlayer from './components/MusicPlayer';
-import { GameState, Stats, FoodType, Quote } from './types';
-import { QUOTES, PLAYLIST } from './constants';
-import { Utensils, Zap, Heart, Trash2, Moon, MessageSquare, Battery, Coffee, Smile, ChevronUp, ChevronDown } from 'lucide-react';
+import { GameState, Stats, Quote, Location } from './types';
+import { QUOTES, FULL_PLAYLIST } from './constants';
+import { Utensils, Zap, Heart, Trash2, Moon, MessageSquare, Battery, Coffee, Smile, ChevronUp, ChevronDown, MapPin, Plane } from 'lucide-react';
 
 const USER_NAME = "Tilde";
 
 const INITIAL_STATS: Stats = {
   hunger: 100,
-  happiness: 100,
-  energy: 100,
-  caffeine: 80, // Starts well caffeinated
-  relax: 80,    // Starts relaxed
+  happiness: 50, // Starts lower, gained via travel
+  caffeine: 80,
+  relax: 50, // Starts lower, gained via yoga
   poopCount: 0
 };
 
-type MenuState = 'IDLE' | 'MAIN_MENU' | 'FOOD_MENU' | 'STATS_VIEW';
-
-const MENU_OPTIONS = ['CIBO', 'YOGA', 'PULISCI', 'LUCE', 'PARLA', 'STATS'];
+type MenuState = 'IDLE' | 'MAIN_MENU' | 'FOOD_MENU' | 'TRAVEL_MENU';
 
 const App: React.FC = () => {
   // --- STATE ---
@@ -30,18 +27,48 @@ const App: React.FC = () => {
   const [frame, setFrame] = useState(0); 
   const [message, setMessage] = useState<string>("");
   const [isMessageVisible, setIsMessageVisible] = useState(false);
+  const [location, setLocation] = useState<Location>(Location.BERGAMO);
+  const [interactionEmoji, setInteractionEmoji] = useState<string | null>(null);
   
-  // Game Loop Ref
   const tickRef = useRef<number | null>(null);
 
-  // --- HELPERS ---
-  const getRandomQuote = (category?: Quote['category']) => {
-    let pool = QUOTES;
-    if (category) {
-      pool = QUOTES.filter(q => q.category === category);
+  // --- CONFIGS ---
+  const getMainOptions = () => ['CIBO', 'YOGA', 'PULISCI', 'LUCE', 'VIAGGIA'];
+
+  const getFoodOptions = () => {
+    switch (location) {
+      case Location.GREECE:
+        return ['Pita Gyros', 'Zuppa Oporto', 'Caffè Sabbioso'];
+      case Location.VILLA_PANZA:
+        return ['Avocado', 'Uova e Pepe', 'Caffè']; 
+      case Location.BERGAMO:
+      default:
+        return ['Avocado', 'Uova e Pepe', 'Caffè', 'Bugan Pizza'];
     }
-    const rand = pool[Math.floor(Math.random() * pool.length)];
-    return rand;
+  };
+
+  const getTravelOptions = () => ['BERGAMO', 'GRECIA', 'VILLA PANZA'];
+
+  // --- HELPERS ---
+
+  const getCurrentPlaylist = () => {
+    if (location === Location.GREECE) {
+        return FULL_PLAYLIST.filter(t => t.artist === 'Kerala Dust');
+    } else if (location === Location.BERGAMO) {
+        return FULL_PLAYLIST.filter(t => t.artist === 'Faccianuvola' || t.artist.includes('Eugenio'));
+    } else {
+        return FULL_PLAYLIST;
+    }
+  };
+
+  const getRandomQuote = () => {
+    let allowedCategories = ['system'];
+    if (location === Location.BERGAMO) allowedCategories.push('faccianuvola');
+    if (location === Location.GREECE) allowedCategories.push('kerala');
+    if (location === Location.VILLA_PANZA) allowedCategories.push('panza');
+
+    const pool = QUOTES.filter(q => allowedCategories.includes(q.category));
+    return pool[Math.floor(Math.random() * pool.length)];
   };
 
   const showQuote = (forcedQuote?: string, duration = 4000) => {
@@ -52,7 +79,9 @@ const App: React.FC = () => {
       text = forcedQuote;
     } else {
       const q = getRandomQuote();
-      if (Math.random() < 0.4) {
+      if (q.text.includes('🎵')) {
+          text = q.text;
+      } else if (Math.random() < 0.4 && q.category !== 'system') {
           text = `${USER_NAME}, "${q.text.toLowerCase()}"`;
       } else {
           text = `"${q.text}"`;
@@ -66,62 +95,45 @@ const App: React.FC = () => {
     }, duration);
   };
 
+  const triggerAnimation = (emoji: string) => {
+    setInteractionEmoji(emoji);
+    setTimeout(() => setInteractionEmoji(null), 2000);
+  };
+
   // --- GAME LOOP ---
   useEffect(() => {
     tickRef.current = window.setInterval(() => {
       setFrame(f => (f === 0 ? 1 : 0));
 
+      // Passive Commentary System
+      if (gameState === GameState.IDLE && !isMessageVisible) {
+          if (Math.random() < 0.05) {
+             showQuote();
+          }
+      }
+
       if (gameState !== GameState.DEAD) {
         setStats(prev => {
-          // --- DECAY RATES ---
-          
-          // Caffeine Decay: Drops slowly.
           const newCaffeine = Math.max(0, prev.caffeine - 0.04);
-          
-          // Relax Decay: Drops moderately.
           const newRelax = Math.max(0, prev.relax - 0.03);
-
-          // Hunger
           const newHunger = Math.max(0, prev.hunger - 0.02); 
 
-          // Energy: 
-          // If Sleeping: +Recovery
-          // If Awake: -Decay (accelerated if Caffeine is low)
-          let newEnergy = prev.energy;
-          if (gameState === GameState.SLEEPING) {
-             newEnergy = Math.min(100, prev.energy + 2.0);
-          } else {
-             const energyDecay = newCaffeine < 20 ? 0.1 : 0.005; // Tired without coffee
-             newEnergy = Math.max(0, prev.energy - energyDecay);
-          }
-
-          // Happiness: 
-          // Affected by Hunger, Poop, Relax level
-          let happinessDecay = 0.02;
-          if (prev.relax < 30) happinessDecay += 0.02; // Stress hurts happiness
+          let happinessDecay = 0.01;
+          if (prev.relax < 20) happinessDecay += 0.02;
           if (prev.poopCount > 0) happinessDecay += 0.05;
           const newHappiness = Math.max(0, prev.happiness - happinessDecay);
           
-          // Poop Logic
           let newPoop = prev.poopCount;
           if (prev.hunger > 20 && Math.random() < 0.001 && prev.poopCount < 4 && gameState !== GameState.SLEEPING && gameState !== GameState.YOGA) {
             newPoop += 1;
           }
 
-          // Death check
-          if (newHunger <= 0 || newHappiness <= 0 || newEnergy <= 0) {
+          if (newHunger <= 0) {
             setGameState(GameState.DEAD);
-            setMessage(`System Failure.`);
+            setMessage(`System Failure. Fame.`);
             setIsMessageVisible(true);
           }
 
-          // Auto wake up
-          if (gameState === GameState.SLEEPING && newEnergy >= 100) {
-            setGameState(GameState.IDLE);
-            showQuote(`Buongiorno ${USER_NAME}. Serve caffè.`);
-          }
-
-          // Auto finish Yoga
           if (gameState === GameState.YOGA && newRelax >= 100) {
               setGameState(GameState.IDLE);
               showQuote(`Namastè, ${USER_NAME}.`);
@@ -129,7 +141,6 @@ const App: React.FC = () => {
 
           return {
             hunger: newHunger,
-            energy: newEnergy,
             happiness: newHappiness,
             caffeine: newCaffeine,
             relax: newRelax,
@@ -142,34 +153,36 @@ const App: React.FC = () => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
-  }, [gameState]);
+  }, [gameState, isMessageVisible, location]);
 
 
   // --- CONTROLS ---
 
+  const getCurrentMenuList = () => {
+    switch (menuState) {
+      case 'MAIN_MENU': return getMainOptions();
+      case 'FOOD_MENU': return getFoodOptions();
+      case 'TRAVEL_MENU': return getTravelOptions();
+      default: return [];
+    }
+  };
+
   const handleUp = () => {
     if (gameState === GameState.DEAD) return;
-    if (menuState === 'MAIN_MENU') {
-        setMenuIndex(prev => (prev - 1 + MENU_OPTIONS.length) % MENU_OPTIONS.length);
-    } else if (menuState === 'FOOD_MENU') {
-        setMenuIndex(prev => (prev - 1 + 3) % 3);
-    }
+    const list = getCurrentMenuList();
+    if (list.length > 0) setMenuIndex(prev => (prev - 1 + list.length) % list.length);
   };
 
   const handleDown = () => {
     if (gameState === GameState.DEAD) return;
-    if (menuState === 'MAIN_MENU') {
-        setMenuIndex(prev => (prev + 1) % MENU_OPTIONS.length);
-    } else if (menuState === 'FOOD_MENU') {
-        setMenuIndex(prev => (prev + 1) % 3);
-    }
+    const list = getCurrentMenuList();
+    if (list.length > 0) setMenuIndex(prev => (prev + 1) % list.length);
   };
 
-  const handleConfirm = () => { // Button A
+  const handleConfirm = () => {
     if (gameState === GameState.DEAD) return;
 
     if (menuState === 'IDLE') {
-        // Open Menu
         setMenuState('MAIN_MENU');
         setMenuIndex(0);
     } 
@@ -179,29 +192,22 @@ const App: React.FC = () => {
     else if (menuState === 'FOOD_MENU') {
         confirmFood(menuIndex);
     } 
-    else if (menuState === 'STATS_VIEW') {
-        setMenuState('IDLE'); // Exit stats
+    else if (menuState === 'TRAVEL_MENU') {
+        confirmTravel(menuIndex);
     }
   };
 
-  const handleBack = () => { // Button B
+  const handleBack = () => {
     if (gameState === GameState.DEAD) return;
-
-    if (menuState === 'IDLE') {
-        // IDLE ACTION: Toggle Stats / Quick Talk
-        if (Math.random() > 0.5) showQuote();
-        else setMenuState('STATS_VIEW');
-    } else {
-        // Back to Idle
-        setMenuState('IDLE');
-        setMenuIndex(0);
-    }
+    setMenuState('IDLE');
+    setMenuIndex(0);
   };
 
   // --- LOGIC ---
 
   const handleMainMenuSelection = () => {
-    const selected = MENU_OPTIONS[menuIndex];
+    const options = getMainOptions();
+    const selected = options[menuIndex];
 
     switch (selected) {
         case 'CIBO':
@@ -217,76 +223,107 @@ const App: React.FC = () => {
         case 'LUCE':
             toggleSleep();
             break;
-        case 'PARLA':
-            setMenuState('IDLE');
-            showQuote();
-            break;
-        case 'STATS':
-            setMenuState('STATS_VIEW');
+        case 'VIAGGIA':
+            setMenuState('TRAVEL_MENU');
+            setMenuIndex(0);
             break;
     }
   };
 
   const confirmFood = (index: number) => {
-    const foods = Object.values(FoodType);
+    const foods = getFoodOptions();
     const selectedFood = foods[index];
-    
     setMenuState('IDLE');
     setGameState(GameState.EATING);
-    
     setTimeout(() => {
         setStats(prev => {
-            let newCaffeine = prev.caffeine;
-            let newHunger = prev.hunger;
-            let newHappiness = prev.happiness;
-
-            if (selectedFood === FoodType.CAFFE) {
-                newCaffeine = Math.min(100, prev.caffeine + 50);
-                newHappiness += 5;
-                showQuote(`Carburante liquido. Grazie ${USER_NAME}.`);
-            } else if (selectedFood === FoodType.AVOCADO) {
-                newHunger = Math.min(100, prev.hunger + 40);
-                newHappiness += 10;
-                showQuote(`Grassi buoni. Ottimo.`);
+            let { caffeine, hunger, happiness } = prev;
+            if (selectedFood.includes('Caffè')) {
+                caffeine = Math.min(100, caffeine + 50);
+                happiness += 2;
+                triggerAnimation("☕");
+                showQuote(location === Location.GREECE ? "Caffè sabbioso." : `Carburante.`);
+            } else if (selectedFood.includes('Avocado')) {
+                hunger = Math.min(100, hunger + 40);
+                happiness += 5;
+                triggerAnimation("🥑");
+                showQuote(`Grassi buoni.`);
+            } else if (selectedFood.includes('Bugan')) {
+                hunger = Math.min(100, hunger + 80);
+                happiness += 10;
+                triggerAnimation("🍕");
+                showQuote(`Sant' Alessandro 31.`);
+            } else if (selectedFood.includes('Pita')) {
+                hunger = Math.min(100, hunger + 60);
+                happiness += 8;
+                triggerAnimation("🥙");
+            } else if (selectedFood.includes('Zuppa')) {
+                hunger = Math.min(100, hunger + 50);
+                happiness += 5;
+                triggerAnimation("🍲");
             } else {
-                newHunger = Math.min(100, prev.hunger + 50);
-                newHappiness += 5;
-                showQuote(`Proteine.`);
+                hunger = Math.min(100, hunger + 50);
+                happiness += 3;
+                triggerAnimation("🍳");
             }
-
-            return {
-                ...prev,
-                caffeine: newCaffeine,
-                hunger: newHunger,
-                happiness: Math.min(100, newHappiness)
-            };
+            return { ...prev, caffeine, hunger, happiness: Math.min(100, happiness) };
         });
         setGameState(GameState.IDLE);
     }, 2000);
   };
 
+  const confirmTravel = (index: number) => {
+    const destinations = [Location.BERGAMO, Location.GREECE, Location.VILLA_PANZA];
+    const destination = destinations[index];
+    setMenuState('IDLE');
+    
+    if (destination === location) {
+      showQuote("Siamo già qui.");
+      return;
+    }
+
+    setGameState(GameState.SLEEPING);
+    setMessage(`Viaggio verso ${destination}...`);
+    setIsMessageVisible(true);
+    triggerAnimation("✈️");
+
+    setTimeout(() => {
+      setLocation(destination);
+      setGameState(GameState.IDLE);
+      setIsMessageVisible(false);
+      setStats(prev => ({ ...prev, happiness: 100 }));
+      if (destination === Location.GREECE) showQuote("Kalimera, Tilde.");
+      if (destination === Location.VILLA_PANZA) showQuote("Luci al neon.");
+      if (destination === Location.BERGAMO) showQuote("Casa.");
+    }, 3000);
+  };
+
   const startYoga = () => {
     setMenuState('IDLE');
     if (gameState === GameState.SLEEPING) return;
-    
     setGameState(GameState.YOGA);
-    showQuote("Inizio sequenza Zen...", 2000);
     
-    // Yoga replenishes Relax over time in the tick loop
-    // Also gives a boost now
-    setStats(prev => ({
-        ...prev,
-        relax: Math.min(100, prev.relax + 10)
-    }));
+    const hour = new Date().getHours();
+    const isEarly = hour < 9;
+    
+    if (isEarly) {
+        showQuote("Sessione mattutina con Erica da Rovetta.", 3000);
+    } else {
+        showQuote("Yoga con Erica da Rovetta. Inspira...", 3000);
+    }
+    triggerAnimation("🧘");
+    setStats(prev => ({ ...prev, relax: Math.min(100, prev.relax + 40) }));
   };
 
   const cleanPoop = () => {
     setMenuState('IDLE');
     if (stats.poopCount > 0) {
-        setStats(prev => ({ ...prev, poopCount: 0, happiness: Math.min(100, prev.happiness + 20) }));
-        showQuote(`Minimalismo ripristinato.`);
+        setStats(prev => ({ ...prev, poopCount: 0, happiness: Math.min(100, prev.happiness + 10) }));
+        showQuote(`Pulito.`);
+        triggerAnimation("✨");
     } else {
-        showQuote(`Tutto pulito, ${USER_NAME}.`);
+        showQuote(`Tutto pulito.`);
+        triggerAnimation("👍");
     }
   };
 
@@ -294,177 +331,208 @@ const App: React.FC = () => {
     setMenuState('IDLE');
     if (gameState === GameState.SLEEPING) {
         setGameState(GameState.IDLE);
-        showQuote("Troppa luce...");
+        showQuote("Sveglia.");
+        triggerAnimation("☀️");
     } else {
         setGameState(GameState.SLEEPING);
+        triggerAnimation("💤");
     }
   };
 
-  // --- RENDERERS ---
+  // --- THEMING ---
+  const getTheme = () => {
+    if (location === Location.GREECE) {
+      return {
+        bg: "bg-gradient-to-b from-sky-400 to-blue-600",
+        shell: "bg-white border-[#0057B8]",
+        shellShadow: "shadow-[0_20px_40px_rgba(0,87,184,0.4)]",
+        inner: "bg-[#e0f7fa] border-[#0057B8]",
+        textMain: "text-[#0057B8]",
+        highlight: "text-blue-500",
+        branding: "GRECIA 3000",
+        flag: "🇬🇷"
+      };
+    } else if (location === Location.VILLA_PANZA) {
+      return {
+        bg: "bg-neutral-950",
+        shell: "bg-neutral-800 border-pink-500",
+        shellShadow: "shadow-[0_0_30px_rgba(255,0,255,0.4)]",
+        inner: "bg-black border-pink-500",
+        textMain: "text-pink-500",
+        highlight: "text-pink-400",
+        branding: "NEON VILLA",
+        flag: "🖼️"
+      };
+    }
+    return {
+      bg: "bg-gradient-to-br from-purple-900 to-indigo-900",
+      shell: "bg-[#b8e0d2] border-[#e8f3d6]",
+      shellShadow: "shadow-[inset_-5px_-5px_15px_rgba(0,0,0,0.1),_0_20px_40px_rgba(0,0,0,0.6)]",
+      inner: "bg-[#fcfc9c] border-[#95c556]",
+      textMain: "text-[#4a5043]",
+      highlight: "text-[#95c556]",
+      branding: "FURETTOGOTCHI",
+      flag: "🥑"
+    };
+  };
 
-  const renderProgressBar = (value: number, colorClass: string) => (
-    <div className="w-full h-2 bg-[#8b967e] border border-[#4a5043] mt-1 relative">
-        <div 
-            className={`h-full ${colorClass}`} 
-            style={{ width: `${value}%` }}
-        />
+  const theme = getTheme();
+
+  const renderSideStat = (label: string, value: number, color: string, icon: React.ReactNode) => (
+    <div className="flex flex-col items-center gap-1">
+        <div className="text-[10px] font-bold text-white/50 tracking-wider flex items-center gap-1">{icon} {label}</div>
+        <div className="w-4 h-20 md:h-24 bg-black/40 rounded-full relative overflow-hidden border border-white/10 shadow-inner">
+            <div 
+                className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ${color}`} 
+                style={{ height: `${value}%` }}
+            >
+                <div className="w-full h-full opacity-30 bg-[linear-gradient(transparent_50%,rgba(255,255,255,0.5)_50%)] bg-[length:100%_4px]"></div>
+            </div>
+        </div>
+        <div className="text-[9px] font-mono text-white/80">{Math.round(value)}%</div>
     </div>
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-br from-purple-900 to-indigo-900 text-neutral-200">
+    <div className={`min-h-screen flex flex-col items-center justify-center py-8 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-y-auto`}>
       
       {/* HEADER */}
-      <h1 className="text-xl mb-6 text-center text-white/80 tracking-widest uppercase text-shadow-glow">
-        Furetto <span className="text-pink-400">Pixel</span>
+      <h1 className="text-2xl md:text-3xl mb-8 text-center text-white/90 tracking-[0.3em] uppercase text-shadow-glow font-bold break-all">
+        Furettogotchi <span className={theme.highlight}>Pixel</span>
       </h1>
 
-      {/* TAMAGOTCHI SHELL */}
-      <div className="relative w-[320px] h-[380px] bg-[#f0f0f0] rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%] shadow-[inset_-5px_-5px_15px_rgba(0,0,0,0.1),_0_20px_40px_rgba(0,0,0,0.6)] border-4 border-[#dcdcdc] flex flex-col items-center pt-12 pb-8 overflow-hidden">
-        
-        {/* BRANDING */}
-        <div className="absolute top-6 text-[#ccc] font-bold text-xs tracking-widest">BITLOVE</div>
+      <div className="relative w-full max-w-[600px] flex flex-col items-center">
+          
+          {/* STATS: MOBILE (Grid on Top) */}
+          <div className="md:hidden w-full grid grid-cols-4 gap-2 mb-6 px-4">
+             {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
+             {renderSideStat("FELICITÀ", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
+             {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
+             {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
+          </div>
 
-        {/* SCREEN CONTAINER */}
-        <div className="w-[200px] h-[180px] bg-[#9ea792] rounded-lg shadow-[inset_3px_3px_8px_rgba(0,0,0,0.3)] border-4 border-[#8b967e] relative p-1 flex flex-col justify-between">
-            
-            {/* SCANLINE OVERLAY */}
-            <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] z-20"></div>
+          {/* GAME WRAPPER (Relative for Desktop Stats) */}
+          <div className="relative flex items-center justify-center w-full">
 
-            {/* SCREEN CONTENT */}
-            <div className="flex-1 relative flex flex-col items-center justify-center z-10 w-full h-full overflow-hidden">
-              
-                {/* 1. STATUS VIEW */}
-                {menuState === 'STATS_VIEW' && (
-                    <div className="w-full h-full p-2 text-[#2d3129] font-mono text-[8px] flex flex-col gap-1">
-                        <div className="text-center border-b border-[#2d3129] mb-1">STATUS SYSTEM</div>
-                        <div className="flex items-center gap-1">
-                            <Utensils size={8} /> FAME
-                            <div className="flex-1">{renderProgressBar(stats.hunger, 'bg-green-700')}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Heart size={8} /> FELICITÀ
-                            <div className="flex-1">{renderProgressBar(stats.happiness, 'bg-pink-700')}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Battery size={8} /> ENERGIA
-                            <div className="flex-1">{renderProgressBar(stats.energy, 'bg-yellow-700')}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Coffee size={8} /> CAFFEINA
-                            <div className="flex-1">{renderProgressBar(stats.caffeine, 'bg-amber-900')}</div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            <Smile size={8} /> RELAX
-                            <div className="flex-1">{renderProgressBar(stats.relax, 'bg-blue-700')}</div>
-                        </div>
-                        <div className="mt-auto text-center opacity-60">PRESS B TO EXIT</div>
-                    </div>
-                )}
+              {/* STATS: DESKTOP (Absolute Wings) */}
+              <div className="hidden md:flex absolute left-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-l-xl border-y border-l border-white/10 z-0">
+                 {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
+                 {renderSideStat("FELICITÀ", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
+              </div>
+              <div className="hidden md:flex absolute right-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-r-xl border-y border-r border-white/10 z-0">
+                 {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
+                 {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
+              </div>
 
-                {/* 2. GAME VIEW (IDLE/MENUS) */}
-                {menuState !== 'STATS_VIEW' && (
-                    <>
-                        {/* Status Icons Top Row (Minimal) */}
-                        <div className="absolute top-1 left-1 right-1 flex justify-between text-[#4a5043] opacity-60">
-                             {gameState === GameState.SLEEPING && <Moon size={8} />}
-                             {stats.caffeine < 20 && <Coffee size={8} className="animate-pulse text-red-800" />}
-                             {stats.relax < 20 && <div className="text-[8px] animate-pulse">STRESS</div>}
+              {/* TAMAGOTCHI SHELL */}
+              {/* Responsive Dimensions: Width is fluid but capped, Aspect ratio maintained roughly */}
+              <div className={`
+                relative 
+                w-full max-w-[400px] 
+                aspect-[3/4] md:h-[520px] md:aspect-auto
+                rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%] 
+                border-[8px] md:border-[12px] 
+                flex flex-col items-center 
+                pt-12 md:pt-20 pb-8 md:pb-10 
+                overflow-hidden 
+                transition-all duration-700 z-10 
+                ${theme.shell} ${theme.shellShadow}
+              `}>
+                
+                {/* SCREEN */}
+                <div className={`w-[80%] max-w-[260px] aspect-square md:h-[240px] md:w-[260px] md:aspect-auto rounded-xl border-4 relative p-3 flex flex-col justify-between transition-colors duration-700 ${theme.inner}`}>
+                    
+                    {/* OVERLAYS */}
+                    <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] z-20"></div>
+                    {location === Location.BERGAMO && (
+                       <div className="absolute inset-0 opacity-5 bg-[repeating-linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000),repeating-linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000)] bg-[length:20px_20px] bg-[position:0_0,10px_10px] pointer-events-none"></div>
+                    )}
+
+                    {/* GAME AREA */}
+                    <div className="flex-1 relative flex flex-col items-center justify-center z-10 w-full h-full overflow-hidden">
+                        
+                        {/* Status Icons */}
+                        <div className={`absolute top-1 left-1 right-1 flex justify-between opacity-60 ${theme.textMain} font-bold text-[10px] md:text-xs`}>
+                             <div className="flex gap-1">
+                               <div className="absolute top-[-5px] right-[-5px] text-4xl md:text-5xl rotate-12 opacity-80 filter drop-shadow-md">
+                                 {theme.flag}
+                               </div>
+                             </div>
+                             <div className="flex gap-1">
+                               {gameState === GameState.SLEEPING && <Moon size={12} />}
+                               {stats.caffeine < 20 && <Coffee size={12} className="animate-pulse" />}
+                               {stats.relax < 20 && <div className="text-[9px] animate-pulse">STRESS</div>}
+                             </div>
                         </div>
 
                         {/* Speech Bubble */}
                         {isMessageVisible && (
-                            <div className="absolute top-4 w-[90%] bg-[#4a5043] text-[#9ea792] p-2 text-[8px] leading-tight text-center border border-[#2d3129] shadow-md z-30">
+                            <div className={`absolute top-8 md:top-10 w-[95%] p-2 md:p-3 text-[9px] md:text-[10px] leading-tight text-center border-2 shadow-md z-30 rounded-md animate-in fade-in zoom-in duration-300 ${location === Location.VILLA_PANZA ? 'bg-pink-900 text-pink-100 border-pink-500' : 'bg-white text-black border-black'}`}>
                             {message}
                             </div>
                         )}
 
                         {/* FERRET */}
-                        <div className={`w-32 h-32 relative transition-opacity ${menuState !== 'IDLE' ? 'opacity-20' : 'opacity-100'}`}>
+                        <div className={`w-32 h-32 md:w-40 md:h-40 relative transition-opacity ${menuState !== 'IDLE' ? 'opacity-20' : 'opacity-100'} ${location === Location.VILLA_PANZA ? 'grayscale contrast-125' : ''}`}>
                             <PixelFerret state={gameState} frame={frame} />
-                            {stats.poopCount > 0 && <div className="absolute bottom-2 right-0 text-xl animate-pulse">💩</div>}
+                            {stats.poopCount > 0 && <div className="absolute bottom-2 right-0 text-3xl animate-pulse">💩</div>}
+                            
+                            {interactionEmoji && (
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-5xl md:text-6xl animate-[bounce_1s_ease-in-out_infinite] opacity-90 filter drop-shadow-lg">
+                                  {interactionEmoji}
+                                </div>
+                              </div>
+                            )}
                         </div>
 
-                        {/* MENUS OVERLAY */}
+                        {/* MENUS */}
                         {menuState !== 'IDLE' && (
                             <div className="absolute inset-0 flex items-center justify-center z-40">
-                                <div className="bg-[#9ea792] border-2 border-[#4a5043] p-1 w-[80%] shadow-[4px_4px_0px_rgba(0,0,0,0.2)]">
-                                    {menuState === 'MAIN_MENU' && (
-                                        <ul className="text-[10px] text-[#2d3129] font-bold">
-                                            {MENU_OPTIONS.map((opt, i) => (
-                                                <li key={opt} className={`px-2 py-1 ${i === menuIndex ? 'bg-[#4a5043] text-[#9ea792]' : ''}`}>
-                                                    {i === menuIndex ? '> ' : '  '}{opt}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                    {menuState === 'FOOD_MENU' && (
-                                        <ul className="text-[10px] text-[#2d3129] font-bold">
-                                            {Object.values(FoodType).map((food, i) => (
-                                                <li key={food} className={`px-2 py-1 ${i === menuIndex ? 'bg-[#4a5043] text-[#9ea792]' : ''}`}>
-                                                    {i === menuIndex ? '> ' : '  '}{food}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
+                                <div className={`border-2 p-3 w-[85%] shadow-[4px_4px_0px_rgba(0,0,0,0.2)] ${location === Location.VILLA_PANZA ? 'bg-black border-pink-500' : 'bg-[#e0f0e0] border-black'}`}>
+                                    <ul className={`text-xs md:text-sm font-bold ${theme.textMain}`}>
+                                        {getCurrentMenuList().map((opt, i) => (
+                                            <li key={opt} className={`px-2 py-1 mb-1 ${i === menuIndex ? (location === Location.VILLA_PANZA ? 'bg-pink-700 text-white' : 'bg-black text-white') : ''}`}>
+                                                {i === menuIndex ? '> ' : '  '}{opt}
+                                            </li>
+                                        ))}
+                                    </ul>
                                 </div>
                             </div>
                         )}
-                    </>
-                )}
+                    </div>
+                </div>
 
-            </div>
-        </div>
+                {/* BRANDING (Below Screen) */}
+                <div className={`mt-2 md:mt-4 mb-2 font-bold text-lg md:text-xl tracking-[0.2em] opacity-50 ${location === Location.VILLA_PANZA ? 'text-pink-500 animate-pulse' : 'text-black/40'}`}>
+                  {theme.branding}
+                </div>
 
-        {/* CONTROLS CONTAINER */}
-        <div className="flex justify-between w-[240px] mt-6 px-2">
-            
-            {/* LEFT: D-PAD (UP/DOWN) */}
-            <div className="flex flex-col gap-2 justify-center">
-                 <button 
-                   onClick={handleUp}
-                   className="w-8 h-8 bg-neutral-800 rounded flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400"
-                   aria-label="Up"
-                 >
-                    <ChevronUp size={16} />
-                 </button>
-                 <button 
-                   onClick={handleDown}
-                   className="w-8 h-8 bg-neutral-800 rounded flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400"
-                   aria-label="Down"
-                 >
-                    <ChevronDown size={16} />
-                 </button>
-            </div>
+                {/* CONTROLS */}
+                <div className="flex justify-between w-[80%] max-w-[300px] mt-2 px-4 pb-4">
+                    {/* D-PAD */}
+                    <div className="flex flex-col gap-2 md:gap-3 justify-center">
+                         <button onClick={handleUp} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronUp size={20} /></button>
+                         <button onClick={handleDown} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronDown size={20} /></button>
+                    </div>
 
-            {/* RIGHT: A / B BUTTONS */}
-            <div className="flex gap-4 items-end mb-2 rotate-[-10deg]">
-                 <div className="flex flex-col items-center gap-1 translate-y-4">
-                     <button 
-                        onClick={handleBack}
-                        className="w-10 h-10 bg-red-600 rounded-full shadow-[0_4px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-xs"
-                      >B</button>
-                      <span className="text-[8px] font-bold text-gray-400">BACK</span>
-                 </div>
-                 <div className="flex flex-col items-center gap-1">
-                     <button 
-                        onClick={handleConfirm}
-                        className="w-10 h-10 bg-blue-600 rounded-full shadow-[0_4px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-xs"
-                      >A</button>
-                      <span className="text-[8px] font-bold text-gray-400">OK</span>
-                 </div>
-            </div>
+                    {/* A/B BUTTONS */}
+                    <div className="flex gap-4 md:gap-6 items-end mb-2 rotate-[-10deg]">
+                         <div className="flex flex-col items-center gap-1 translate-y-4 md:translate-y-6">
+                             <button onClick={handleBack} className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full shadow-[0_5px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-lg touch-manipulation">B</button>
+                         </div>
+                         <div className="flex flex-col items-center gap-1">
+                             <button onClick={handleConfirm} className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-full shadow-[0_5px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-lg touch-manipulation">A</button>
+                         </div>
+                    </div>
+                </div>
 
-        </div>
+              </div>
+          </div>
 
       </div>
 
-      <MusicPlayer playlist={PLAYLIST} />
-
-      <div className="mt-8 text-[8px] text-gray-500 text-center max-w-xs">
-        <p>A: Confirm / Menu &bull; B: Back / Stats</p>
-        <p>Up/Down: Navigate</p>
-      </div>
+      <MusicPlayer playlist={getCurrentPlaylist()} theme={theme} />
 
     </div>
   );
