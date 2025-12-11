@@ -37,17 +37,19 @@ const App: React.FC = () => {
 
   const getFoodOptions = () => {
     switch (location) {
+      case Location.INDIA:
+        return ['Dahl patate dolci', 'Palak spinacioso', 'Lasso', 'Yogurt greco (reset)'];
       case Location.GREECE:
         return ['Pita Gyros', 'Zuppa Oporto', 'Caffè Sabbioso'];
       case Location.VILLA_PANZA:
-        return ['Avocado', 'Uova e Pepe', 'Caffè']; 
+        return ['Avocado', 'Uova e Pepe', 'Caffè'];
       case Location.BERGAMO:
       default:
         return ['Avocado', 'Uova e Pepe', 'Caffè', 'Bugan Pizza'];
     }
   };
 
-  const getTravelOptions = () => ['BERGAMO', 'GRECIA', 'VILLA PANZA'];
+  const getTravelOptions = () => ['BERGAMO', 'GRECIA', 'VILLA PANZA', 'INDIA'];
 
   // --- HELPERS ---
 
@@ -56,6 +58,8 @@ const App: React.FC = () => {
         return FULL_PLAYLIST.filter(t => t.artist === 'Kerala Dust');
     } else if (location === Location.BERGAMO) {
         return FULL_PLAYLIST.filter(t => t.artist === 'Faccianuvola' || t.artist.includes('Eugenio'));
+    } else if (location === Location.INDIA) {
+        return FULL_PLAYLIST.filter(t => t.artist === 'Tilde Sitar');
     } else {
         return FULL_PLAYLIST;
     }
@@ -66,6 +70,7 @@ const App: React.FC = () => {
     if (location === Location.BERGAMO) allowedCategories.push('faccianuvola');
     if (location === Location.GREECE) allowedCategories.push('kerala');
     if (location === Location.VILLA_PANZA) allowedCategories.push('panza');
+    if (location === Location.INDIA) allowedCategories.push('india');
 
     const pool = QUOTES.filter(q => allowedCategories.includes(q.category));
     return pool[Math.floor(Math.random() * pool.length)];
@@ -237,8 +242,38 @@ const App: React.FC = () => {
     setGameState(GameState.EATING);
     setTimeout(() => {
         setStats(prev => {
-            let { caffeine, hunger, happiness } = prev;
-            if (selectedFood.includes('Caffè')) {
+            let { caffeine, hunger, happiness, relax, poopCount } = prev;
+
+            const capPoop = (value: number) => Math.max(0, Math.min(4, value));
+
+            if (selectedFood.includes('Yogurt greco')) {
+                hunger = Math.min(100, hunger + 15);
+                happiness += 6;
+                relax = Math.min(100, relax + 8);
+                poopCount = 0;
+                triggerAnimation("🥛");
+                showQuote(`Reset digerito. Il greco funziona sempre.`);
+            } else if (selectedFood.includes('Dahl')) {
+                hunger = Math.min(100, hunger + 70);
+                happiness += 7;
+                poopCount = capPoop(poopCount + 2);
+                triggerAnimation("🍛");
+                showQuote(`Spezie forti, potrei lamentare cag8. Serve yogurt greco.`);
+            } else if (selectedFood.includes('Palak')) {
+                hunger = Math.min(100, hunger + 55);
+                happiness += 6;
+                relax = Math.min(100, relax + 6);
+                poopCount = capPoop(poopCount + 1);
+                triggerAnimation("🌿");
+                showQuote(`Palak spinacioso. Attenta alla pancia.`);
+            } else if (selectedFood.includes('Lasso')) {
+                hunger = Math.min(100, hunger + 35);
+                happiness += 4;
+                relax = Math.min(100, relax + 10);
+                poopCount = capPoop(poopCount + 1);
+                triggerAnimation("🥤");
+                showQuote(`Dolcezza indiana, ma lo stomaco borbotta.`);
+            } else if (selectedFood.includes('Caffè')) {
                 caffeine = Math.min(100, caffeine + 50);
                 happiness += 2;
                 triggerAnimation("☕");
@@ -266,20 +301,35 @@ const App: React.FC = () => {
                 happiness += 3;
                 triggerAnimation("🍳");
             }
-            return { ...prev, caffeine, hunger, happiness: Math.min(100, happiness) };
+            return {
+              ...prev,
+              caffeine,
+              hunger,
+              relax,
+              poopCount: capPoop(poopCount),
+              happiness: Math.min(100, happiness)
+            };
         });
         setGameState(GameState.IDLE);
     }, 2000);
   };
 
   const confirmTravel = (index: number) => {
-    const destinations = [Location.BERGAMO, Location.GREECE, Location.VILLA_PANZA];
+    const destinations = [Location.BERGAMO, Location.GREECE, Location.VILLA_PANZA, Location.INDIA];
     const destination = destinations[index];
     setMenuState('IDLE');
-    
+
     if (destination === location) {
       showQuote("Siamo già qui.");
       return;
+    }
+
+    if (destination === Location.INDIA) {
+      const unlockDate = new Date('2025-12-29T00:00:00Z');
+      if (new Date() < unlockDate) {
+        showQuote("Aspetta, il viaggio si apre dopo il solstizio.");
+        return;
+      }
     }
 
     setGameState(GameState.SLEEPING);
@@ -295,6 +345,7 @@ const App: React.FC = () => {
       if (destination === Location.GREECE) showQuote("Kalimera, Tilde.");
       if (destination === Location.VILLA_PANZA) showQuote("Luci al neon.");
       if (destination === Location.BERGAMO) showQuote("Casa.");
+      if (destination === Location.INDIA) showQuote("Namaste, viaggio sbloccato.");
     }, 3000);
   };
 
@@ -352,6 +403,18 @@ const App: React.FC = () => {
         branding: "GRECIA 3000",
         flag: "🇬🇷"
       };
+    } else if (location === Location.INDIA) {
+      return {
+        bg: "bg-gradient-to-br from-orange-500 via-amber-200 to-green-600",
+        shell: "bg-[#ffe9c9] border-[#ff9933]",
+        shellShadow: "shadow-[0_20px_40px_rgba(255,153,51,0.45)]",
+        inner: "bg-[#fdf7ec] border-[#138808]",
+        textMain: "text-[#5b3a1a]",
+        highlight: "text-[#138808]",
+        branding: "VIAGGI IN INDIA",
+        flag: "🇮🇳",
+        titleTranslation: "फ्यूरेट्टोगोच्ची पिक्सेल"
+      };
     } else if (location === Location.VILLA_PANZA) {
       return {
         bg: "bg-neutral-950",
@@ -399,6 +462,11 @@ const App: React.FC = () => {
       {/* HEADER */}
       <h1 className="text-2xl md:text-3xl mb-8 text-center text-white/90 tracking-[0.3em] uppercase text-shadow-glow font-bold break-all">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
+        {theme.titleTranslation && (
+          <div className="text-base md:text-lg tracking-wide mt-2 normal-case text-white">
+            {theme.titleTranslation}
+          </div>
+        )}
       </h1>
 
       <div className="relative w-full max-w-[600px] flex flex-col items-center">

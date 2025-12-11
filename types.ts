@@ -12,14 +12,15 @@ export enum GameState {
 export enum Location {
   BERGAMO = 'BERGAMO',
   GREECE = 'GREECE',
-  VILLA_PANZA = 'VILLA_PANZA'
+  VILLA_PANZA = 'VILLA_PANZA',
+  INDIA = 'INDIA'
 }
 
 export interface Quote {
   text: string;
   source: string;
   // Category maps to locations: 'faccianuvola'->Bergamo, 'kerala'->Greece, 'panza'->Villa Panza, 'system'->Anywhere
-  category: 'faccianuvola' | 'kerala' | 'panza' | 'system'; 
+  category: 'faccianuvola' | 'kerala' | 'panza' | 'system' | 'india';
 }
 
 export interface Stats {
