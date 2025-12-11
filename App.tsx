@@ -35,6 +35,8 @@ const App: React.FC = () => {
   // --- CONFIGS ---
   const getMainOptions = () => ['CIBO', 'YOGA', 'PULISCI', 'LUCE', 'VIAGGIA'];
 
+  const indiaUnlockDate = new Date('2025-12-29T00:00:00Z');
+
   const getFoodOptions = () => {
     switch (location) {
       case Location.INDIA:
@@ -49,7 +51,13 @@ const App: React.FC = () => {
     }
   };
 
-  const getTravelOptions = () => ['BERGAMO', 'GRECIA', 'VILLA PANZA', 'INDIA'];
+  const getTravelOptions = () => {
+    const indiaLabel = new Date() >= indiaUnlockDate
+      ? 'INDIA'
+      : `INDIA (bloccata fino al ${indiaUnlockDate.toLocaleDateString('it-IT')}) 🔒`;
+
+    return ['BERGAMO', 'GRECIA', 'VILLA PANZA', indiaLabel];
+  };
 
   // --- HELPERS ---
 
@@ -325,8 +333,7 @@ const App: React.FC = () => {
     }
 
     if (destination === Location.INDIA) {
-      const unlockDate = new Date('2025-12-29T00:00:00Z');
-      if (new Date() < unlockDate) {
+      if (new Date() < indiaUnlockDate) {
         showQuote("India bloccata fino al 29/12/2025. Pazienta, Tilde.");
         return;
       }
