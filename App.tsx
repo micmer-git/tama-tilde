@@ -51,13 +51,21 @@ const App: React.FC = () => {
     }
   };
 
-  const getTravelOptions = () => {
-    const indiaLabel = new Date() >= indiaUnlockDate
-      ? 'INDIA'
-      : `INDIA (bloccata fino al ${indiaUnlockDate.toLocaleDateString('it-IT')}) 🔒`;
+  const getTravelDestinations = () => {
+    const indiaLocked = new Date() < indiaUnlockDate;
+    const indiaLabel = indiaLocked
+      ? `INDIA (bloccata fino al ${indiaUnlockDate.toLocaleDateString('it-IT')}) 🔒`
+      : 'INDIA';
 
-    return ['BERGAMO', 'GRECIA', 'VILLA PANZA', indiaLabel];
+    return [
+      { location: Location.BERGAMO, label: 'BERGAMO', locked: false },
+      { location: Location.GREECE, label: 'GRECIA', locked: false },
+      { location: Location.VILLA_PANZA, label: 'VILLA PANZA', locked: false },
+      { location: Location.INDIA, label: indiaLabel, locked: indiaLocked }
+    ].filter(option => option.location !== location);
   };
+
+  const getTravelOptions = () => getTravelDestinations().map(option => option.label);
 
   // --- HELPERS ---
 
@@ -323,20 +331,22 @@ const App: React.FC = () => {
   };
 
   const confirmTravel = (index: number) => {
-    const destinations = [Location.BERGAMO, Location.GREECE, Location.VILLA_PANZA, Location.INDIA];
-    const destination = destinations[index];
+    const destinations = getTravelDestinations();
+    const selected = destinations[index];
     setMenuState('IDLE');
+
+    if (!selected) return;
+
+    const destination = selected.location;
 
     if (destination === location) {
       showQuote("Siamo già qui.");
       return;
     }
 
-    if (destination === Location.INDIA) {
-      if (new Date() < indiaUnlockDate) {
-        showQuote("India bloccata fino al 29/12/2025. Pazienta, Tilde.");
-        return;
-      }
+    if (selected.locked) {
+      showQuote("India bloccata fino al 29/12/2025. Pazienta, Tilde.");
+      return;
     }
 
     setGameState(GameState.SLEEPING);
