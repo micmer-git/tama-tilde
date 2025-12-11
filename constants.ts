@@ -10,7 +10,10 @@ export const FULL_PLAYLIST: Track[] = [
   // FACCIANUVOLA (Bergamo Vibe)
   { title: 'Verticale', artist: 'Faccianuvola', src: './audio/faccianuvola_verticale.mp3' },
   { title: 'Primavera', artist: 'Faccianuvola', src: './audio/faccianuvola_primavera.mp3' },
-  { title: 'Albero', artist: 'Eugenio in Via Di Gioia', src: './audio/albero.mp3' }
+  { title: 'Albero', artist: 'Eugenio in Via Di Gioia', src: './audio/albero.mp3' },
+
+  // INDIA (Post-2025 Unlock)
+  { title: 'Viaggi in India', artist: 'Tilde Sitar', src: './audio/india.mp3' }
 ];
 
 export const QUOTES: Quote[] = [
@@ -49,5 +52,11 @@ export const QUOTES: Quote[] = [
   { text: "Robert Irwin vede cose che noi ignoriamo.", source: "Villa Panza", category: "panza" },
   { text: "Minimalismo radicale nella scuderia.", source: "Villa Panza", category: "panza" },
   { text: "Neon vibes only.", source: "Villa Panza", category: "panza" },
-  { text: "Collezione Panza: l'arte dell'invisibile.", source: "Villa Panza", category: "panza" }
+  { text: "Collezione Panza: l'arte dell'invisibile.", source: "Villa Panza", category: "panza" },
+
+  // --- INDIA (post 2025) ---
+  { text: "Aspetta, il viaggio si apre dopo il solstizio.", source: "Faccianuvola", category: "faccianuvola" },
+  { text: "🎵 Ho sentito il sitar da lontano... 🎵", source: "India", category: "india" },
+  { text: "Namaste, pixel vagabondo.", source: "India", category: "india" },
+  { text: "Il chai profuma di cardamomo.", source: "India", category: "india" }
 ];
