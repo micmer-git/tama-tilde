@@ -35,8 +35,6 @@ const App: React.FC = () => {
   // --- CONFIGS ---
   const getMainOptions = () => ['CIBO', 'YOGA', 'PULISCI', 'LUCE', 'VIAGGIA'];
 
-  const indiaUnlockDate = new Date('2025-12-29T00:00:00Z');
-
   const getFoodOptions = () => {
     switch (location) {
       case Location.INDIA:
@@ -52,16 +50,11 @@ const App: React.FC = () => {
   };
 
   const getTravelDestinations = () => {
-    const indiaLocked = new Date() < indiaUnlockDate;
-    const indiaLabel = indiaLocked
-      ? `INDIA (bloccata fino al ${indiaUnlockDate.toLocaleDateString('it-IT')}) 🔒`
-      : 'INDIA';
-
     return [
       { location: Location.BERGAMO, label: 'BERGAMO', locked: false },
       { location: Location.GREECE, label: 'GRECIA', locked: false },
       { location: Location.VILLA_PANZA, label: 'VILLA PANZA', locked: false },
-      { location: Location.INDIA, label: indiaLabel, locked: indiaLocked }
+      { location: Location.INDIA, label: 'INDIA', locked: false }
     ].filter(option => option.location !== location);
   };
 
@@ -344,11 +337,6 @@ const App: React.FC = () => {
       return;
     }
 
-    if (selected.locked) {
-      showQuote("India bloccata fino al 29/12/2025. Pazienta, Tilde.");
-      return;
-    }
-
     setGameState(GameState.SLEEPING);
     setMessage(`Viaggio verso ${destination}...`);
     setIsMessageVisible(true);
@@ -362,7 +350,7 @@ const App: React.FC = () => {
       if (destination === Location.GREECE) showQuote("Kalimera, Tilde.");
       if (destination === Location.VILLA_PANZA) showQuote("Luci al neon.");
       if (destination === Location.BERGAMO) showQuote("Casa.");
-      if (destination === Location.INDIA) showQuote("Namaste, viaggio sbloccato.");
+      if (destination === Location.INDIA) showQuote("Namaste, viaggio in India.");
     }, 3000);
   };
 
