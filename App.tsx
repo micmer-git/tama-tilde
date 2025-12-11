@@ -327,7 +327,7 @@ const App: React.FC = () => {
     if (destination === Location.INDIA) {
       const unlockDate = new Date('2025-12-29T00:00:00Z');
       if (new Date() < unlockDate) {
-        showQuote("Aspetta, il viaggio si apre dopo il solstizio.");
+        showQuote("India bloccata fino al 29/12/2025. Pazienta, Tilde.");
         return;
       }
     }
