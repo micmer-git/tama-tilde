@@ -12,8 +12,8 @@ export const FULL_PLAYLIST: Track[] = [
   { title: 'Primavera', artist: 'Faccianuvola', src: './audio/faccianuvola_primavera.mp3' },
   { title: 'Albero', artist: 'Eugenio in Via Di Gioia', src: './audio/albero.mp3' },
 
-  // INDIA
-  { title: 'Viaggi in India', artist: 'Tilde Sitar', src: './audio/india.mp3' }
+  // INDIA VIBE
+  { title: 'Mantra', artist: 'Spiritual Eye', src: './audio/india.mp3' }
 ];
 
 export const QUOTES: Quote[] = [
@@ -35,6 +35,8 @@ export const QUOTES: Quote[] = [
   { text: "Il caffè è freddo, come le tue risposte.", source: "Faccianuvola", category: "faccianuvola" },
   { text: "Vorrei essere un file da cancellare.", source: "Faccianuvola", category: "faccianuvola" },
   { text: "🎵 Luci al neon che tagliano la nebbia... 🎵", source: "Faccianuvola", category: "faccianuvola" },
+  { text: "L'attesa è l'unica cosa che ci rimane.", source: "Faccianuvola", category: "faccianuvola" },
+  { text: "Non siamo ancora pronti per quel futuro.", source: "Faccianuvola", category: "faccianuvola" },
   
   // --- GREECE (Kerala Dust Lyrics) ---
   { text: "The moon is a heavy thing to carry.", source: "Kerala Dust", category: "kerala" },
@@ -52,11 +54,5 @@ export const QUOTES: Quote[] = [
   { text: "Robert Irwin vede cose che noi ignoriamo.", source: "Villa Panza", category: "panza" },
   { text: "Minimalismo radicale nella scuderia.", source: "Villa Panza", category: "panza" },
   { text: "Neon vibes only.", source: "Villa Panza", category: "panza" },
-  { text: "Collezione Panza: l'arte dell'invisibile.", source: "Villa Panza", category: "panza" },
-
-  // --- INDIA ---
-  { text: "Pronta al decollo verso l'India, quando vuoi.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "🎵 Ho sentito il sitar da lontano... 🎵", source: "India", category: "india" },
-  { text: "Namaste, pixel vagabondo.", source: "India", category: "india" },
-  { text: "Il chai profuma di cardamomo.", source: "India", category: "india" }
+  { text: "Collezione Panza: l'arte dell'invisibile.", source: "Villa Panza", category: "panza" }
 ];

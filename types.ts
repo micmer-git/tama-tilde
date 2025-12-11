@@ -20,7 +20,7 @@ export interface Quote {
   text: string;
   source: string;
   // Category maps to locations: 'faccianuvola'->Bergamo, 'kerala'->Greece, 'panza'->Villa Panza, 'system'->Anywhere
-  category: 'faccianuvola' | 'kerala' | 'panza' | 'system' | 'india';
+  category: 'faccianuvola' | 'kerala' | 'panza' | 'system'; 
 }
 
 export interface Stats {

@@ -37,38 +37,29 @@ const App: React.FC = () => {
 
   const getFoodOptions = () => {
     switch (location) {
-      case Location.INDIA:
-        return ['Dahl patate dolci', 'Palak spinacioso', 'Lasso', 'Yogurt greco (reset)'];
       case Location.GREECE:
         return ['Pita Gyros', 'Zuppa Oporto', 'Caffè Sabbioso'];
+      case Location.INDIA:
+        return ['Dahl Patate', 'Palak Spinaci', 'Lassi', 'Yogurt Greco'];
       case Location.VILLA_PANZA:
-        return ['Avocado', 'Uova e Pepe', 'Caffè'];
+        return ['Avocado', 'Uova e Pepe', 'Caffè']; 
       case Location.BERGAMO:
       default:
         return ['Avocado', 'Uova e Pepe', 'Caffè', 'Bugan Pizza'];
     }
   };
 
-  const getTravelDestinations = () => {
-    return [
-      { location: Location.BERGAMO, label: 'BERGAMO', locked: false },
-      { location: Location.GREECE, label: 'GRECIA', locked: false },
-      { location: Location.VILLA_PANZA, label: 'VILLA PANZA', locked: false },
-      { location: Location.INDIA, label: 'INDIA', locked: false }
-    ].filter(option => option.location !== location);
-  };
-
-  const getTravelOptions = () => getTravelDestinations().map(option => option.label);
+  const getTravelOptions = () => ['BERGAMO', 'GRECIA', 'VILLA PANZA', 'INDIA'];
 
   // --- HELPERS ---
 
   const getCurrentPlaylist = () => {
     if (location === Location.GREECE) {
         return FULL_PLAYLIST.filter(t => t.artist === 'Kerala Dust');
+    } else if (location === Location.INDIA) {
+        return FULL_PLAYLIST.filter(t => t.src.includes('india'));
     } else if (location === Location.BERGAMO) {
         return FULL_PLAYLIST.filter(t => t.artist === 'Faccianuvola' || t.artist.includes('Eugenio'));
-    } else if (location === Location.INDIA) {
-        return FULL_PLAYLIST.filter(t => t.artist === 'Tilde Sitar');
     } else {
         return FULL_PLAYLIST;
     }
@@ -79,7 +70,7 @@ const App: React.FC = () => {
     if (location === Location.BERGAMO) allowedCategories.push('faccianuvola');
     if (location === Location.GREECE) allowedCategories.push('kerala');
     if (location === Location.VILLA_PANZA) allowedCategories.push('panza');
-    if (location === Location.INDIA) allowedCategories.push('india');
+    // Note: India currently has no specific pool in QUOTES, falls back to system
 
     const pool = QUOTES.filter(q => allowedCategories.includes(q.category));
     return pool[Math.floor(Math.random() * pool.length)];
@@ -138,8 +129,13 @@ const App: React.FC = () => {
           const newHappiness = Math.max(0, prev.happiness - happinessDecay);
           
           let newPoop = prev.poopCount;
-          if (prev.hunger > 20 && Math.random() < 0.001 && prev.poopCount < 4 && gameState !== GameState.SLEEPING && gameState !== GameState.YOGA) {
+          // Random poop generation logic
+          let poopChance = 0.001;
+          if (location === Location.INDIA && prev.poopCount < 4) poopChance = 0.005; // Higher risk in India
+
+          if (prev.hunger > 20 && Math.random() < poopChance && prev.poopCount < 4 && gameState !== GameState.SLEEPING && gameState !== GameState.YOGA) {
             newPoop += 1;
+            if (location === Location.INDIA) showQuote("Devo trovare un bagno... subito.");
           }
 
           if (newHunger <= 0) {
@@ -251,38 +247,10 @@ const App: React.FC = () => {
     setGameState(GameState.EATING);
     setTimeout(() => {
         setStats(prev => {
-            let { caffeine, hunger, happiness, relax, poopCount } = prev;
-
-            const capPoop = (value: number) => Math.max(0, Math.min(4, value));
-
-            if (selectedFood.includes('Yogurt greco')) {
-                hunger = Math.min(100, hunger + 15);
-                happiness += 6;
-                relax = Math.min(100, relax + 8);
-                poopCount = 0;
-                triggerAnimation("🥛");
-                showQuote(`Reset digerito. Il greco funziona sempre.`);
-            } else if (selectedFood.includes('Dahl')) {
-                hunger = Math.min(100, hunger + 70);
-                happiness += 7;
-                poopCount = capPoop(poopCount + 2);
-                triggerAnimation("🍛");
-                showQuote(`Spezie forti, potrei lamentare cag8. Serve yogurt greco.`);
-            } else if (selectedFood.includes('Palak')) {
-                hunger = Math.min(100, hunger + 55);
-                happiness += 6;
-                relax = Math.min(100, relax + 6);
-                poopCount = capPoop(poopCount + 1);
-                triggerAnimation("🌿");
-                showQuote(`Palak spinacioso. Attenta alla pancia.`);
-            } else if (selectedFood.includes('Lasso')) {
-                hunger = Math.min(100, hunger + 35);
-                happiness += 4;
-                relax = Math.min(100, relax + 10);
-                poopCount = capPoop(poopCount + 1);
-                triggerAnimation("🥤");
-                showQuote(`Dolcezza indiana, ma lo stomaco borbotta.`);
-            } else if (selectedFood.includes('Caffè')) {
+            let { caffeine, hunger, happiness, poopCount } = prev;
+            
+            // GENERAL FOODS
+            if (selectedFood.includes('Caffè')) {
                 caffeine = Math.min(100, caffeine + 50);
                 happiness += 2;
                 triggerAnimation("☕");
@@ -305,36 +273,53 @@ const App: React.FC = () => {
                 hunger = Math.min(100, hunger + 50);
                 happiness += 5;
                 triggerAnimation("🍲");
+            
+            // INDIA FOODS
+            } else if (selectedFood.includes('Dahl') || selectedFood.includes('Palak')) {
+                hunger = Math.min(100, hunger + 70);
+                happiness += 8;
+                triggerAnimation("🥘");
+                showQuote("Speziato.");
+                // Risk of cag8
+                if (Math.random() < 0.4) {
+                    poopCount = Math.min(4, poopCount + 1);
+                    setTimeout(() => showQuote("Oh no... la pancia."), 2500);
+                }
+            } else if (selectedFood.includes('Lassi') || selectedFood.includes('Yogurt')) {
+                hunger = Math.min(100, hunger + 30);
+                happiness += 10;
+                poopCount = 0; // Reset cag8
+                triggerAnimation("🥛");
+                showQuote("Reset gastrico effettuato.");
             } else {
                 hunger = Math.min(100, hunger + 50);
                 happiness += 3;
                 triggerAnimation("🍳");
             }
-            return {
-              ...prev,
-              caffeine,
-              hunger,
-              relax,
-              poopCount: capPoop(poopCount),
-              happiness: Math.min(100, happiness)
-            };
+
+            return { ...prev, caffeine, hunger, happiness: Math.min(100, happiness), poopCount };
         });
         setGameState(GameState.IDLE);
     }, 2000);
   };
 
   const confirmTravel = (index: number) => {
-    const destinations = getTravelDestinations();
-    const selected = destinations[index];
+    const destinations = [Location.BERGAMO, Location.GREECE, Location.VILLA_PANZA, Location.INDIA];
+    const destination = destinations[index];
     setMenuState('IDLE');
-
-    if (!selected) return;
-
-    const destination = selected.location;
-
+    
     if (destination === location) {
       showQuote("Siamo già qui.");
       return;
+    }
+
+    // INDIA DATE LOCK
+    if (destination === Location.INDIA) {
+      const unlockDate = new Date('2025-12-29');
+      if (Date.now() < unlockDate.getTime()) {
+        showQuote("L'attesa è l'unica cosa che ci rimane. (Torna nel 2025)");
+        return;
+      }
     }
 
     setGameState(GameState.SLEEPING);
@@ -349,8 +334,8 @@ const App: React.FC = () => {
       setStats(prev => ({ ...prev, happiness: 100 }));
       if (destination === Location.GREECE) showQuote("Kalimera, Tilde.");
       if (destination === Location.VILLA_PANZA) showQuote("Luci al neon.");
+      if (destination === Location.INDIA) showQuote("Namaste. Attenzione all'acqua.");
       if (destination === Location.BERGAMO) showQuote("Casa.");
-      if (destination === Location.INDIA) showQuote("Namaste, viaggio in India.");
     }, 3000);
   };
 
@@ -408,18 +393,6 @@ const App: React.FC = () => {
         branding: "GRECIA 3000",
         flag: "🇬🇷"
       };
-    } else if (location === Location.INDIA) {
-      return {
-        bg: "bg-gradient-to-br from-orange-500 via-amber-200 to-green-600",
-        shell: "bg-[#ffe9c9] border-[#ff9933]",
-        shellShadow: "shadow-[0_20px_40px_rgba(255,153,51,0.45)]",
-        inner: "bg-[#fdf7ec] border-[#138808]",
-        textMain: "text-[#5b3a1a]",
-        highlight: "text-[#138808]",
-        branding: "VIAGGI IN INDIA",
-        flag: "🇮🇳",
-        titleTranslation: "फ्यूरेट्टोगोच्ची पिक्सेल"
-      };
     } else if (location === Location.VILLA_PANZA) {
       return {
         bg: "bg-neutral-950",
@@ -430,6 +403,17 @@ const App: React.FC = () => {
         highlight: "text-pink-400",
         branding: "NEON VILLA",
         flag: "🖼️"
+      };
+    } else if (location === Location.INDIA) {
+      return {
+        bg: "bg-gradient-to-br from-orange-500 via-amber-200 to-green-600",
+        shell: "bg-orange-100 border-orange-600",
+        shellShadow: "shadow-[0_20px_40px_rgba(234,88,12,0.5)]",
+        inner: "bg-amber-50 border-orange-600",
+        textMain: "text-orange-800",
+        highlight: "text-green-600",
+        branding: "फुरेटोगोत्ची", // Furettogotchi in Hindi
+        flag: "🇮🇳"
       };
     }
     return {
@@ -467,11 +451,6 @@ const App: React.FC = () => {
       {/* HEADER */}
       <h1 className="text-2xl md:text-3xl mb-8 text-center text-white/90 tracking-[0.3em] uppercase text-shadow-glow font-bold break-all">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
-        {theme.titleTranslation && (
-          <div className="text-base md:text-lg tracking-wide mt-2 normal-case text-white">
-            {theme.titleTranslation}
-          </div>
-        )}
       </h1>
 
       <div className="relative w-full max-w-[600px] flex flex-col items-center">
