@@ -450,7 +450,7 @@ const App: React.FC = () => {
   const renderSideStat = (label: string, value: number, color: string, icon: React.ReactNode) => (
     <div className="flex flex-col items-center gap-1 h-full">
         <div className="text-[10px] font-bold text-white/50 tracking-wider flex items-center gap-1">{icon} {label}</div>
-        <div className="w-4 flex-1 bg-black/40 rounded-full relative overflow-hidden border border-white/10 shadow-inner">
+        <div className="w-3 flex-1 bg-black/40 rounded-full relative overflow-hidden border border-white/10 shadow-inner">
             <div 
                 className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ${color}`} 
                 style={{ height: `${value}%` }}
@@ -471,7 +471,7 @@ const App: React.FC = () => {
            <div className={`max-w-xs w-full bg-neutral-900 border-2 ${theme.highlight.replace('text-', 'border-')} p-6 rounded-xl shadow-2xl text-center flex flex-col gap-4`}>
               <h2 className={`text-xl font-bold ${theme.highlight} tracking-widest uppercase`}>Furettogotchi v2.0</h2>
               <div className="text-xs text-neutral-400 font-mono space-y-2">
-                 <p>Release: November 2024</p>
+                 <p>Release: December 2025</p>
                  <div className="w-full h-px bg-white/10 my-2"></div>
                  <p className="text-white">NEXT UPDATE:</p>
                  <p className="text-lg font-bold text-yellow-400 animate-pulse">29 DEC 2025</p>
@@ -487,7 +487,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* HEADER: Smaller on mobile, constrained height */}
+      {/* HEADER: Compact header */}
       <h1 className="text-lg md:text-3xl mb-1 text-center text-white/90 tracking-[0.2em] md:tracking-[0.3em] uppercase text-shadow-glow font-bold shrink-0">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
       </h1>
@@ -495,7 +495,7 @@ const App: React.FC = () => {
       <div className="flex-1 w-full max-w-[500px] flex flex-col items-center justify-center relative min-h-0">
           
           {/* STATS: MOBILE (Compact grid at top) */}
-          <div className="md:hidden w-full grid grid-cols-4 gap-2 mb-1 shrink-0 h-[60px]">
+          <div className="md:hidden w-full grid grid-cols-4 gap-2 mb-1 shrink-0 h-[50px]">
              {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
              {renderSideStat("HAPPY", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
              {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
@@ -512,19 +512,21 @@ const App: React.FC = () => {
              {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
           </div>
 
-          {/* SHELL: Responsive container */}
+          {/* SHELL: Responsive, Oval on mobile, bigger on desktop */}
           <div className={`
             relative 
-            flex-1 w-full max-h-[600px]
-            md:h-[520px] md:aspect-auto md:flex-none
-            rounded-[2rem] md:rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%]
+            flex-1 w-full
+            max-w-[340px] md:max-w-none 
+            aspect-[0.78] md:aspect-auto md:h-[520px] 
+            md:flex-none
+            rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%]
             border-[8px] md:border-[12px] 
             flex flex-col items-center 
-            pt-4 md:pt-20 pb-2 md:pb-10 
-            px-2
+            pt-16 md:pt-20 pb-16 md:pb-10 
+            px-14 md:px-6
             overflow-hidden 
             transition-all duration-700 z-10 
-            mb-12 md:mb-0 /* Space for mobile player */
+            mb-12 md:mb-0
             ${theme.shell} ${theme.shellShadow}
           `}>
             
@@ -535,8 +537,7 @@ const App: React.FC = () => {
               flex flex-col items-center justify-center
             `}>
                 <div className={`
-                   aspect-square h-full max-h-full max-w-full
-                   md:w-[260px] md:aspect-auto md:h-[240px]
+                   aspect-square w-full md:w-[260px] md:aspect-auto md:h-[240px]
                    rounded-xl border-4 relative p-3 
                    flex flex-col justify-between 
                    transition-colors duration-700 
@@ -600,23 +601,23 @@ const App: React.FC = () => {
             </div>
 
             {/* BRANDING */}
-            <div className={`mt-1 md:mt-4 mb-1 font-bold text-sm md:text-xl tracking-[0.2em] opacity-50 shrink-0 ${location === Location.VILLA_PANZA ? 'text-pink-500 animate-pulse' : 'text-black/40'}`}>
+            <div className={`mt-2 md:mt-4 mb-2 font-bold text-xs md:text-xl tracking-[0.2em] opacity-50 shrink-0 ${location === Location.VILLA_PANZA ? 'text-pink-500 animate-pulse' : 'text-black/40'}`}>
               {theme.branding}
             </div>
 
             {/* CONTROLS */}
-            <div className="flex justify-between w-[90%] md:w-[80%] md:max-w-[300px] mt-1 px-4 pb-1 shrink-0">
-                <div className="flex flex-col gap-2 md:gap-3 justify-center">
-                      <button onClick={handleUp} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronUp size={20} /></button>
-                      <button onClick={handleDown} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronDown size={20} /></button>
+            <div className="flex justify-center gap-6 w-full mt-2 px-2 shrink-0">
+                <div className="flex flex-col gap-2 justify-center">
+                      <button onClick={handleUp} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded-full flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-500 touch-manipulation"><ChevronUp size={20} /></button>
+                      <button onClick={handleDown} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded-full flex items-center justify-center shadow-[0_3px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-500 touch-manipulation"><ChevronDown size={20} /></button>
                 </div>
 
-                <div className="flex gap-4 md:gap-6 items-end mb-1 md:rotate-[-10deg]">
-                      <div className="flex flex-col items-center gap-1 md:translate-y-6">
-                          <button onClick={handleBack} className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full shadow-[0_5px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-lg touch-manipulation">B</button>
+                <div className="flex gap-4 items-end mb-2">
+                      <div className="flex flex-col items-center gap-1">
+                          <button onClick={handleBack} className="w-10 h-10 md:w-14 md:h-14 bg-neutral-800 rounded-full shadow-[0_3px_0_#1a1a1a] active:shadow-none active:translate-y-1 hover:bg-neutral-700 transition-all flex items-center justify-center text-neutral-600 touch-manipulation"></button>
                       </div>
                       <div className="flex flex-col items-center gap-1">
-                          <button onClick={handleConfirm} className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-full shadow-[0_5px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-lg touch-manipulation">A</button>
+                          <button onClick={handleConfirm} className="w-10 h-10 md:w-14 md:h-14 bg-neutral-800 rounded-full shadow-[0_3px_0_#1a1a1a] active:shadow-none active:translate-y-1 hover:bg-neutral-700 transition-all flex items-center justify-center text-neutral-600 touch-manipulation"></button>
                       </div>
                 </div>
             </div>

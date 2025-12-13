@@ -25,6 +25,7 @@ export const QUOTES: Quote[] = [
   { text: "Ciao Tilde, sei reale o sei un render?", source: "Furetto", category: "system" },
   { text: "Voglio andare altrove...", source: "Furetto", category: "system" },
   { text: "Ho bisogno di vacanza.", source: "Furetto", category: "system" },
+  { text: "Porco dimari che corsa.", source: "Furetto", category: "system" },
 
   // --- BERGAMO (Faccianuvola Lyrics) ---
   { text: "Disperata gioventù non vuol tornare a casa sua.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
