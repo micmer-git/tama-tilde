@@ -10,48 +10,57 @@ interface MusicPlayerProps {
 
 const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
   const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  // Start with a random track
+  const [currentTrackIndex, setCurrentTrackIndex] = useState(() => Math.floor(Math.random() * playlist.length));
   const [error, setError] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
-  const currentTrack = playlist[currentTrackIndex];
+  const isFirstLoad = useRef(true); // Track if this is the initial load for random seeking
+
+  // Ensure index is valid if playlist changes (e.g. traveling)
+  useEffect(() => {
+    setCurrentTrackIndex(prev => {
+        if (prev >= playlist.length) return 0;
+        return prev;
+    });
+  }, [playlist.length]);
+
+  const currentTrack = playlist[currentTrackIndex] || playlist[0];
 
   // Colors
   const borderColor = theme?.shell?.split(' ')[1] || 'border-neutral-700';
   const marqueeColor = theme?.highlight?.replace('text-', 'text-') || 'text-green-400';
 
-  // Autoplay on mount
+  // Handle track changes and Autoplay/Random Seek
   useEffect(() => {
-    const attemptAutoplay = async () => {
-      if (audioRef.current) {
-        try {
-          await audioRef.current.play();
-          setIsPlaying(true);
-        } catch (err) {
-          console.warn("Autoplay blocked by browser policy:", err);
-          setIsPlaying(false);
-        }
-      }
-    };
-    attemptAutoplay();
-  }, []);
-
-  // Handle track changes
-  useEffect(() => {
-    if (audioRef.current) {
+    if (audioRef.current && currentTrack) {
       audioRef.current.src = currentTrack.src;
-      audioRef.current.load();
       setError(false);
       
-      if (isPlaying) {
-        audioRef.current.play().catch(e => {
-            console.warn(`Playback prevented: ${currentTrack.src}`);
-            setError(true);
-            setIsPlaying(false);
-        });
-      }
+      const handleMetadata = () => {
+        // Only seek to random time on the very first load of the app
+        if (isFirstLoad.current && audioRef.current && audioRef.current.duration) {
+            const randomTime = Math.random() * audioRef.current.duration;
+            if (isFinite(randomTime)) {
+                audioRef.current.currentTime = randomTime;
+                console.log(`Starting at random time: ${Math.round(randomTime)}s`);
+            }
+            isFirstLoad.current = false;
+        }
+        
+        // Always attempt autoplay
+        audioRef.current?.play()
+            .then(() => setIsPlaying(true))
+            .catch(e => {
+                console.warn(`Autoplay prevented: ${e.message}`);
+                setIsPlaying(false);
+            });
+      };
+
+      audioRef.current.addEventListener('loadedmetadata', handleMetadata, { once: true });
+      audioRef.current.load();
     }
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, currentTrack]); // Added currentTrack dependency to handle playlist swaps
 
   // Handle Play/Pause toggle state sync
   useEffect(() => {
@@ -65,10 +74,17 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
   }, [isPlaying]);
 
   const nextTrack = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+    // Pick a random track (Shuffle mode always on)
+    let nextIndex = Math.floor(Math.random() * playlist.length);
+    // Try to pick a different song if possible
+    if (playlist.length > 1 && nextIndex === currentTrackIndex) {
+        nextIndex = (nextIndex + 1) % playlist.length;
+    }
+    setCurrentTrackIndex(nextIndex);
   };
 
   const handleError = () => {
+    console.error("Audio error, skipping...");
     setError(true);
     setTimeout(() => { nextTrack(); }, 2000);
   };
@@ -87,7 +103,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
              {error ? <AlertCircle size={14} className="text-red-500 shrink-0" /> : <Music size={14} className={`shrink-0 ${isPlaying ? "animate-pulse" : ""}`} />}
              <div className="w-full overflow-hidden relative">
                <span className="marquee block uppercase tracking-wider">
-                  {error ? `ERR: ${currentTrack.src}` : `${currentTrack.artist} - ${currentTrack.title}`}
+                  {error ? `ERR: ${currentTrack?.src}` : `${currentTrack?.artist} - ${currentTrack?.title}`}
                </span>
              </div>
           </div>
@@ -109,8 +125,8 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
                <Music size={10} className={marqueeColor} />
             </div>
             <div className="flex flex-col overflow-hidden leading-none">
-               <span className={`text-[9px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack.title}</span>
-               <span className="text-[8px] text-neutral-500 truncate">{currentTrack.artist}</span>
+               <span className={`text-[9px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack?.title}</span>
+               <span className="text-[8px] text-neutral-500 truncate">{currentTrack?.artist}</span>
             </div>
          </div>
          <div className="flex items-center gap-4 shrink-0">

@@ -155,42 +155,68 @@
 
       const MusicPlayer = ({ playlist, theme }) => {
         const [isPlaying, setIsPlaying] = useState(false);
-        const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+        // Random start song
+        const [currentTrackIndex, setCurrentTrackIndex] = useState(() => Math.floor(Math.random() * playlist.length));
         const [error, setError] = useState(false);
         const audioRef = useRef(null);
+        const isFirstLoad = useRef(true);
         
-        const currentTrack = playlist[currentTrackIndex % playlist.length];
-
+        // Handle playlist changes (e.g. travel)
         useEffect(() => {
-          const attemptAutoplay = async () => {
-            if (audioRef.current) {
-                try {
-                await audioRef.current.play();
-                setIsPlaying(true);
-                } catch (err) {
-                console.warn("Autoplay blocked by browser policy:", err);
-                setIsPlaying(false);
-                }
-            }
-          };
-          attemptAutoplay();
-        }, []);
+            setCurrentTrackIndex(prev => {
+                if (prev >= playlist.length) return 0;
+                return prev;
+            });
+        }, [playlist.length]);
+
+        const currentTrack = playlist[currentTrackIndex] || playlist[0];
 
         useEffect(() => {
           if (audioRef.current && currentTrack) {
             audioRef.current.src = currentTrack.src;
-            audioRef.current.load();
             setError(false);
-            if (isPlaying) {
-              audioRef.current.play().catch(e => {
-                  console.warn("Playback prevented");
-                  setIsPlaying(false);
-              });
-            }
-          }
-        }, [currentTrack, isPlaying]);
 
-        const nextTrack = () => setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+            const handleMetadata = () => {
+                // Seek random time only on first load
+                if (isFirstLoad.current && audioRef.current && audioRef.current.duration) {
+                    const randomTime = Math.random() * audioRef.current.duration;
+                    if (isFinite(randomTime)) {
+                        audioRef.current.currentTime = randomTime;
+                        console.log("Random start time:", randomTime);
+                    }
+                    isFirstLoad.current = false;
+                }
+                
+                // Autoplay
+                audioRef.current.play()
+                    .then(() => setIsPlaying(true))
+                    .catch(e => {
+                        console.warn("Autoplay blocked:", e);
+                        setIsPlaying(false);
+                    });
+            };
+
+            audioRef.current.addEventListener('loadedmetadata', handleMetadata, { once: true });
+            audioRef.current.load();
+          }
+        }, [currentTrack, currentTrackIndex]);
+
+        useEffect(() => {
+           if (audioRef.current) {
+             if (isPlaying) audioRef.current.play().catch(() => setIsPlaying(false));
+             else audioRef.current.pause();
+           }
+        }, [isPlaying]);
+
+        const nextTrack = () => {
+            // Random Shuffle for next song
+            let nextIndex = Math.floor(Math.random() * playlist.length);
+            if (playlist.length > 1 && nextIndex === currentTrackIndex) {
+                nextIndex = (nextIndex + 1) % playlist.length;
+            }
+            setCurrentTrackIndex(nextIndex);
+        };
+        
         const handleError = () => { setError(true); setTimeout(nextTrack, 2000); };
         
         const borderColor = theme?.shell?.split(' ')[1] || 'border-neutral-700';
@@ -210,7 +236,7 @@
                   {error ? <AlertCircle size={14} className="text-red-500 shrink-0" /> : <Music size={14} className={`shrink-0 ${isPlaying ? "animate-pulse" : ""}`} />}
                   <div className="w-full overflow-hidden relative">
                       <span className="marquee block uppercase tracking-wider">
-                          {error ? `ERR: ${currentTrack.src}` : `${currentTrack.artist} - ${currentTrack.title}`}
+                          {error ? `ERR: ${currentTrack?.src}` : `${currentTrack?.artist} - ${currentTrack?.title}`}
                       </span>
                   </div>
                   </div>
@@ -232,8 +258,8 @@
                     <Music size={10} className={marqueeColor} />
                   </div>
                   <div className="flex flex-col overflow-hidden leading-none">
-                    <span className={`text-[9px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack.title}</span>
-                    <span className="text-[8px] text-neutral-500 truncate">{currentTrack.artist}</span>
+                    <span className={`text-[9px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack?.title}</span>
+                    <span className="text-[8px] text-neutral-500 truncate">{currentTrack?.artist}</span>
                   </div>
               </div>
               <div className="flex items-center gap-4 shrink-0">
