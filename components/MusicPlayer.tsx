@@ -1,6 +1,6 @@
 
 import React, { useEffect, useRef, useState } from 'react';
-import { Play, Pause, SkipForward, Music, AlertCircle } from 'lucide-react';
+import { Play, Pause, SkipForward, Music, AlertCircle, Shuffle } from 'lucide-react';
 import { Track } from '../types';
 
 interface MusicPlayerProps {
@@ -12,6 +12,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [error, setError] = useState(false);
+  const [hasAutoStarted, setHasAutoStarted] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const currentTrack = playlist[currentTrackIndex];
@@ -20,38 +21,39 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
   const borderColor = theme?.shell?.split(' ')[1] || 'border-neutral-700';
   const marqueeColor = theme?.highlight?.replace('text-', 'text-') || 'text-green-400';
 
+  const pickRandomIndex = () => {
+    if (!playlist.length) return 0;
+    return Math.floor(Math.random() * playlist.length);
+  };
+
+  useEffect(() => {
+    setHasAutoStarted(false);
+  }, [playlist]);
+
   // Autoplay on mount
   useEffect(() => {
-    const attemptAutoplay = async () => {
-      if (audioRef.current) {
-        try {
-          await audioRef.current.play();
-          setIsPlaying(true);
-        } catch (err) {
-          console.warn("Autoplay blocked by browser policy:", err);
-          setIsPlaying(false);
-        }
-      }
-    };
-    attemptAutoplay();
-  }, []);
+    if (!playlist.length || hasAutoStarted) return;
+    const startIndex = pickRandomIndex();
+    setCurrentTrackIndex(startIndex);
+    setIsPlaying(true);
+    setHasAutoStarted(true);
+  }, [playlist, hasAutoStarted]);
 
   // Handle track changes
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.src = currentTrack.src;
-      audioRef.current.load();
-      setError(false);
-      
-      if (isPlaying) {
-        audioRef.current.play().catch(e => {
-            console.warn(`Playback prevented: ${currentTrack.src}`);
-            setError(true);
-            setIsPlaying(false);
-        });
-      }
+    if (!audioRef.current || !currentTrack?.src) return;
+    audioRef.current.src = currentTrack.src;
+    audioRef.current.load();
+    setError(false);
+
+    if (isPlaying) {
+      audioRef.current.play().catch(e => {
+        console.warn(`Playback prevented: ${currentTrack.src}`);
+        setError(true);
+        setIsPlaying(false);
+      });
     }
-  }, [currentTrackIndex]);
+  }, [currentTrackIndex, currentTrack?.src, isPlaying]);
 
   // Handle Play/Pause toggle state sync
   useEffect(() => {
@@ -65,7 +67,13 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
   }, [isPlaying]);
 
   const nextTrack = () => {
+    if (!playlist.length) return;
     setCurrentTrackIndex((prev) => (prev + 1) % playlist.length);
+  };
+
+  const shuffleTrack = () => {
+    if (!playlist.length) return;
+    setCurrentTrackIndex(pickRandomIndex());
   };
 
   const handleError = () => {
@@ -78,7 +86,7 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
       <audio ref={audioRef} onEnded={nextTrack} onError={handleError} />
       
       {/* DESKTOP VIEW: Retro Card */}
-      <div className={`hidden md:flex mt-4 w-full max-w-[320px] bg-neutral-900 border-4 ${borderColor} rounded-xl p-4 flex-col gap-3 shadow-2xl relative overflow-hidden transition-colors duration-700`}>
+      <div className={`hidden md:flex mt-2 w-full max-w-[320px] bg-neutral-900 border-4 ${borderColor} rounded-xl p-4 flex-col gap-3 shadow-2xl relative overflow-hidden transition-colors duration-700`}>
         <div className="absolute top-[-10px] right-[-10px] opacity-10 pointer-events-none">
           <div className={`w-24 h-24 rounded-full border-8 border-dashed border-white ${isPlaying ? 'animate-spin' : ''}`} style={{animationDuration: '4s'}}></div>
         </div>
@@ -99,31 +107,36 @@ const MusicPlayer: React.FC<MusicPlayerProps> = ({ playlist, theme }) => {
           <button onClick={nextTrack} className="text-neutral-500 hover:text-white active:scale-95 transition-all transform hover:scale-110">
             <SkipForward size={32} fill="currentColor" />
           </button>
+          <button onClick={shuffleTrack} className="text-neutral-500 hover:text-white active:scale-95 transition-all transform hover:scale-110">
+            <Shuffle size={28} />
+          </button>
         </div>
       </div>
 
-      {/* MOBILE VIEW: Compact Bottom Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-neutral-900/90 backdrop-blur-md border-t border-white/10 flex items-center px-4 justify-between z-50 pb-safe">
-         <div className="flex items-center gap-3 overflow-hidden flex-1 mr-4">
-            <div className={`w-8 h-8 rounded-full bg-neutral-800 flex items-center justify-center border border-white/10 shrink-0 ${isPlaying ? 'animate-spin-slow' : ''}`}>
-               <Music size={14} className={marqueeColor} />
+      {/* MOBILE VIEW: Compact Integrated Card */}
+      <div className="md:hidden w-full bg-neutral-900/80 backdrop-blur-md border border-white/10 rounded-xl p-3 flex items-center justify-between gap-3 shadow-lg">
+         <div className="flex items-center gap-3 overflow-hidden flex-1 mr-2">
+            <div className={`w-10 h-10 rounded-full bg-neutral-800 flex items-center justify-center border border-white/10 shrink-0 ${isPlaying ? 'animate-spin-slow' : ''}`}>
+               <Music size={16} className={marqueeColor} />
             </div>
             <div className="flex flex-col overflow-hidden">
-               <span className={`text-[10px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack.title}</span>
-               <span className="text-[9px] text-neutral-500 truncate">{currentTrack.artist}</span>
+               <span className={`text-[11px] uppercase font-bold truncate ${marqueeColor}`}>{currentTrack.title}</span>
+               <span className="text-[10px] text-neutral-400 truncate">{currentTrack.artist}</span>
             </div>
          </div>
-         <div className="flex items-center gap-4 shrink-0">
-             <button onClick={() => setIsPlaying(!isPlaying)} className="text-white active:scale-90 transition-transform">
-               {isPlaying ? <Pause size={24} fill="currentColor" /> : <Play size={24} fill="currentColor" />}
+         <div className="flex items-center gap-3 shrink-0">
+             <button onClick={shuffleTrack} className="text-white active:scale-90 transition-transform" aria-label="Shuffle track">
+               <Shuffle size={20} />
              </button>
-             <button onClick={nextTrack} className="text-white active:scale-90 transition-transform">
-               <SkipForward size={24} fill="currentColor" />
+             <button onClick={() => setIsPlaying(!isPlaying)} className="text-white active:scale-90 transition-transform" aria-label={isPlaying ? 'Pause' : 'Play'}>
+               {isPlaying ? <Pause size={22} fill="currentColor" /> : <Play size={22} fill="currentColor" />}
+             </button>
+             <button onClick={nextTrack} className="text-white active:scale-90 transition-transform" aria-label="Next track">
+               <SkipForward size={22} fill="currentColor" />
              </button>
          </div>
       </div>
       <style>{`
-        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
         .animate-spin-slow { animation: spin 4s linear infinite; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
       `}</style>
