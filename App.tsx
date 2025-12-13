@@ -10,9 +10,9 @@ const USER_NAME = "Tilde";
 
 const INITIAL_STATS: Stats = {
   hunger: 100,
-  happiness: 50, // Starts lower, gained via travel
+  happiness: 50,
   caffeine: 80,
-  relax: 50, // Starts lower, gained via yoga
+  relax: 50,
   poopCount: 0
 };
 
@@ -70,8 +70,6 @@ const App: React.FC = () => {
     if (location === Location.BERGAMO) allowedCategories.push('faccianuvola');
     if (location === Location.GREECE) allowedCategories.push('kerala');
     if (location === Location.VILLA_PANZA) allowedCategories.push('panza');
-    // Note: India currently has no specific pool in QUOTES, falls back to system
-
     const pool = QUOTES.filter(q => allowedCategories.includes(q.category));
     return pool[Math.floor(Math.random() * pool.length)];
   };
@@ -110,7 +108,7 @@ const App: React.FC = () => {
     tickRef.current = window.setInterval(() => {
       setFrame(f => (f === 0 ? 1 : 0));
 
-      // Passive Commentary System
+      // Passive Commentary
       if (gameState === GameState.IDLE && !isMessageVisible) {
           if (Math.random() < 0.05) {
              showQuote();
@@ -129,9 +127,8 @@ const App: React.FC = () => {
           const newHappiness = Math.max(0, prev.happiness - happinessDecay);
           
           let newPoop = prev.poopCount;
-          // Random poop generation logic
           let poopChance = 0.001;
-          if (location === Location.INDIA && prev.poopCount < 4) poopChance = 0.005; // Higher risk in India
+          if (location === Location.INDIA && prev.poopCount < 4) poopChance = 0.005;
 
           if (prev.hunger > 20 && Math.random() < poopChance && prev.poopCount < 4 && gameState !== GameState.SLEEPING && gameState !== GameState.YOGA) {
             newPoop += 1;
@@ -249,7 +246,6 @@ const App: React.FC = () => {
         setStats(prev => {
             let { caffeine, hunger, happiness, poopCount } = prev;
             
-            // GENERAL FOODS
             if (selectedFood.includes('Caffè')) {
                 caffeine = Math.min(100, caffeine + 50);
                 happiness += 2;
@@ -273,14 +269,11 @@ const App: React.FC = () => {
                 hunger = Math.min(100, hunger + 50);
                 happiness += 5;
                 triggerAnimation("🍲");
-            
-            // INDIA FOODS
             } else if (selectedFood.includes('Dahl') || selectedFood.includes('Palak')) {
                 hunger = Math.min(100, hunger + 70);
                 happiness += 8;
                 triggerAnimation("🥘");
                 showQuote("Speziato.");
-                // Risk of cag8
                 if (Math.random() < 0.4) {
                     poopCount = Math.min(4, poopCount + 1);
                     setTimeout(() => showQuote("Oh no... la pancia."), 2500);
@@ -288,7 +281,7 @@ const App: React.FC = () => {
             } else if (selectedFood.includes('Lassi') || selectedFood.includes('Yogurt')) {
                 hunger = Math.min(100, hunger + 30);
                 happiness += 10;
-                poopCount = 0; // Reset cag8
+                poopCount = 0;
                 triggerAnimation("🥛");
                 showQuote("Reset gastrico effettuato.");
             } else {
@@ -313,7 +306,6 @@ const App: React.FC = () => {
       return;
     }
 
-    // INDIA DATE LOCK
     if (destination === Location.INDIA) {
       const unlockDate = new Date('2025-12-29');
       if (Date.now() < unlockDate.getTime()) {
@@ -347,11 +339,9 @@ const App: React.FC = () => {
     const hour = new Date().getHours();
     const isEarly = hour < 9;
     
-    if (isEarly) {
-        showQuote("Sessione mattutina con Erica da Rovetta.", 3000);
-    } else {
-        showQuote("Yoga con Erica da Rovetta. Inspira...", 3000);
-    }
+    if (isEarly) showQuote("Sessione mattutina con Erica da Rovetta.", 3000);
+    else showQuote("Yoga con Erica da Rovetta. Inspira...", 3000);
+    
     triggerAnimation("🧘");
     setStats(prev => ({ ...prev, relax: Math.min(100, prev.relax + 40) }));
   };
@@ -412,7 +402,7 @@ const App: React.FC = () => {
         inner: "bg-amber-50 border-orange-600",
         textMain: "text-orange-800",
         highlight: "text-green-600",
-        branding: "फुरेटोगोत्ची", // Furettogotchi in Hindi
+        branding: "फुरेटोगोत्ची",
         flag: "🇮🇳"
       };
     }
@@ -433,7 +423,7 @@ const App: React.FC = () => {
   const renderSideStat = (label: string, value: number, color: string, icon: React.ReactNode) => (
     <div className="flex flex-col items-center gap-1">
         <div className="text-[10px] font-bold text-white/50 tracking-wider flex items-center gap-1">{icon} {label}</div>
-        <div className="w-4 h-20 md:h-24 bg-black/40 rounded-full relative overflow-hidden border border-white/10 shadow-inner">
+        <div className="w-4 h-full max-h-[60px] md:max-h-[100px] bg-black/40 rounded-full relative overflow-hidden border border-white/10 shadow-inner">
             <div 
                 className={`absolute bottom-0 left-0 right-0 transition-all duration-1000 ${color}`} 
                 style={{ height: `${value}%` }}
@@ -446,142 +436,136 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className={`min-h-screen flex flex-col items-center justify-center py-8 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-y-auto`}>
+    <div className={`h-[100dvh] flex flex-col items-center py-2 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-hidden`}>
       
-      {/* HEADER */}
-      <h1 className="text-2xl md:text-3xl mb-8 text-center text-white/90 tracking-[0.3em] uppercase text-shadow-glow font-bold break-all">
+      {/* HEADER: Smaller on mobile, constrained height */}
+      <h1 className="text-xl md:text-3xl mb-2 text-center text-white/90 tracking-[0.2em] md:tracking-[0.3em] uppercase text-shadow-glow font-bold shrink-0">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
       </h1>
 
-      <div className="relative w-full max-w-[600px] flex flex-col items-center">
+      <div className="flex-1 w-full max-w-[500px] flex flex-col items-center justify-center relative min-h-0">
           
-          {/* STATS: MOBILE (Grid on Top) */}
-          <div className="md:hidden w-full grid grid-cols-4 gap-2 mb-6 px-4">
+          {/* STATS: MOBILE (Compact grid at top) */}
+          <div className="md:hidden w-full grid grid-cols-4 gap-4 mb-2 shrink-0 h-[80px]">
              {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
-             {renderSideStat("FELICITÀ", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
+             {renderSideStat("HAPPY", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
              {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
              {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
           </div>
 
-          {/* GAME WRAPPER (Relative for Desktop Stats) */}
-          <div className="relative flex items-center justify-center w-full">
-
-              {/* STATS: DESKTOP (Absolute Wings) */}
-              <div className="hidden md:flex absolute left-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-l-xl border-y border-l border-white/10 z-0">
-                 {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
-                 {renderSideStat("FELICITÀ", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
-              </div>
-              <div className="hidden md:flex absolute right-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-r-xl border-y border-r border-white/10 z-0">
-                 {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
-                 {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
-              </div>
-
-              {/* TAMAGOTCHI SHELL */}
-              {/* Responsive Dimensions: Width is fluid but capped, Aspect ratio maintained roughly */}
-              <div className={`
-                relative 
-                w-full max-w-[400px] 
-                aspect-[3/4] md:h-[520px] md:aspect-auto
-                rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%] 
-                border-[8px] md:border-[12px] 
-                flex flex-col items-center 
-                pt-12 md:pt-20 pb-8 md:pb-10 
-                overflow-hidden 
-                transition-all duration-700 z-10 
-                ${theme.shell} ${theme.shellShadow}
-              `}>
-                
-                {/* SCREEN */}
-                <div className={`w-[80%] max-w-[260px] aspect-square md:h-[240px] md:w-[260px] md:aspect-auto rounded-xl border-4 relative p-3 flex flex-col justify-between transition-colors duration-700 ${theme.inner}`}>
-                    
-                    {/* OVERLAYS */}
-                    <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] z-20"></div>
-                    {location === Location.BERGAMO && (
-                       <div className="absolute inset-0 opacity-5 bg-[repeating-linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000),repeating-linear-gradient(45deg,#000_25%,transparent_25%,transparent_75%,#000_75%,#000)] bg-[length:20px_20px] bg-[position:0_0,10px_10px] pointer-events-none"></div>
-                    )}
-
-                    {/* GAME AREA */}
-                    <div className="flex-1 relative flex flex-col items-center justify-center z-10 w-full h-full overflow-hidden">
-                        
-                        {/* Status Icons */}
-                        <div className={`absolute top-1 left-1 right-1 flex justify-between opacity-60 ${theme.textMain} font-bold text-[10px] md:text-xs`}>
-                             <div className="flex gap-1">
-                               <div className="absolute top-[-5px] right-[-5px] text-4xl md:text-5xl rotate-12 opacity-80 filter drop-shadow-md">
-                                 {theme.flag}
-                               </div>
-                             </div>
-                             <div className="flex gap-1">
-                               {gameState === GameState.SLEEPING && <Moon size={12} />}
-                               {stats.caffeine < 20 && <Coffee size={12} className="animate-pulse" />}
-                               {stats.relax < 20 && <div className="text-[9px] animate-pulse">STRESS</div>}
-                             </div>
-                        </div>
-
-                        {/* Speech Bubble */}
-                        {isMessageVisible && (
-                            <div className={`absolute top-8 md:top-10 w-[95%] p-2 md:p-3 text-[9px] md:text-[10px] leading-tight text-center border-2 shadow-md z-30 rounded-md animate-in fade-in zoom-in duration-300 ${location === Location.VILLA_PANZA ? 'bg-pink-900 text-pink-100 border-pink-500' : 'bg-white text-black border-black'}`}>
-                            {message}
-                            </div>
-                        )}
-
-                        {/* FERRET */}
-                        <div className={`w-32 h-32 md:w-40 md:h-40 relative transition-opacity ${menuState !== 'IDLE' ? 'opacity-20' : 'opacity-100'} ${location === Location.VILLA_PANZA ? 'grayscale contrast-125' : ''}`}>
-                            <PixelFerret state={gameState} frame={frame} />
-                            {stats.poopCount > 0 && <div className="absolute bottom-2 right-0 text-3xl animate-pulse">💩</div>}
-                            
-                            {interactionEmoji && (
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="text-5xl md:text-6xl animate-[bounce_1s_ease-in-out_infinite] opacity-90 filter drop-shadow-lg">
-                                  {interactionEmoji}
-                                </div>
-                              </div>
-                            )}
-                        </div>
-
-                        {/* MENUS */}
-                        {menuState !== 'IDLE' && (
-                            <div className="absolute inset-0 flex items-center justify-center z-40">
-                                <div className={`border-2 p-3 w-[85%] shadow-[4px_4px_0px_rgba(0,0,0,0.2)] ${location === Location.VILLA_PANZA ? 'bg-black border-pink-500' : 'bg-[#e0f0e0] border-black'}`}>
-                                    <ul className={`text-xs md:text-sm font-bold ${theme.textMain}`}>
-                                        {getCurrentMenuList().map((opt, i) => (
-                                            <li key={opt} className={`px-2 py-1 mb-1 ${i === menuIndex ? (location === Location.VILLA_PANZA ? 'bg-pink-700 text-white' : 'bg-black text-white') : ''}`}>
-                                                {i === menuIndex ? '> ' : '  '}{opt}
-                                            </li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-
-                {/* BRANDING (Below Screen) */}
-                <div className={`mt-2 md:mt-4 mb-2 font-bold text-lg md:text-xl tracking-[0.2em] opacity-50 ${location === Location.VILLA_PANZA ? 'text-pink-500 animate-pulse' : 'text-black/40'}`}>
-                  {theme.branding}
-                </div>
-
-                {/* CONTROLS */}
-                <div className="flex justify-between w-[80%] max-w-[300px] mt-2 px-4 pb-4">
-                    {/* D-PAD */}
-                    <div className="flex flex-col gap-2 md:gap-3 justify-center">
-                         <button onClick={handleUp} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronUp size={20} /></button>
-                         <button onClick={handleDown} className="w-10 h-10 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronDown size={20} /></button>
-                    </div>
-
-                    {/* A/B BUTTONS */}
-                    <div className="flex gap-4 md:gap-6 items-end mb-2 rotate-[-10deg]">
-                         <div className="flex flex-col items-center gap-1 translate-y-4 md:translate-y-6">
-                             <button onClick={handleBack} className="w-12 h-12 md:w-14 md:h-14 bg-red-600 rounded-full shadow-[0_5px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-lg touch-manipulation">B</button>
-                         </div>
-                         <div className="flex flex-col items-center gap-1">
-                             <button onClick={handleConfirm} className="w-12 h-12 md:w-14 md:h-14 bg-blue-600 rounded-full shadow-[0_5px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-lg touch-manipulation">A</button>
-                         </div>
-                    </div>
-                </div>
-
-              </div>
+          {/* STATS: DESKTOP (Absolute Wings) */}
+          <div className="hidden md:flex absolute left-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-l-xl border-y border-l border-white/10 z-0">
+             {renderSideStat("FAME", stats.hunger, "bg-green-500", <Utensils size={10}/>)}
+             {renderSideStat("FELICITÀ", stats.happiness, "bg-pink-500", <Heart size={10}/>)}
+          </div>
+          <div className="hidden md:flex absolute right-[-80px] top-20 flex-col gap-4 p-3 bg-neutral-900/40 backdrop-blur-sm rounded-r-xl border-y border-r border-white/10 z-0">
+             {renderSideStat("RELAX", stats.relax, "bg-blue-500", <Smile size={10}/>)}
+             {renderSideStat("CAFFÈ", stats.caffeine, "bg-amber-600", <Coffee size={10}/>)}
           </div>
 
+          {/* SHELL: Responsive container */}
+          <div className={`
+            relative 
+            flex-1 w-full max-h-[600px]
+            md:aspect-[3/4] md:flex-none md:h-[520px] md:w-auto
+            rounded-[2rem] md:rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%]
+            border-[8px] md:border-[12px] 
+            flex flex-col items-center 
+            pt-4 md:pt-20 pb-4 md:pb-10 
+            overflow-hidden 
+            transition-all duration-700 z-10 
+            mb-16 md:mb-0 /* Space for mobile player */
+            ${theme.shell} ${theme.shellShadow}
+          `}>
+            
+            {/* SCREEN CONTAINER - Scales with Shell */}
+            <div className={`
+              w-[90%] md:w-[260px] 
+              aspect-square md:aspect-auto md:h-[240px]
+              rounded-xl border-4 relative p-3 
+              flex flex-col justify-between 
+              transition-colors duration-700 
+              mx-auto
+              ${theme.inner}
+            `}>
+                
+                {/* OVERLAYS */}
+                <div className="absolute inset-0 pointer-events-none opacity-10 bg-[linear-gradient(transparent_50%,rgba(0,0,0,0.5)_50%)] bg-[length:100%_4px] z-20"></div>
+                
+                {/* GAME AREA */}
+                <div className="flex-1 relative flex flex-col items-center justify-center z-10 w-full h-full overflow-hidden">
+                    <div className={`absolute top-1 left-1 right-1 flex justify-between opacity-60 ${theme.textMain} font-bold text-[10px] md:text-xs`}>
+                          <div className="flex gap-1">
+                            <div className="absolute top-[-5px] right-[-5px] text-4xl md:text-5xl rotate-12 opacity-80 filter drop-shadow-md">
+                              {theme.flag}
+                            </div>
+                          </div>
+                          <div className="flex gap-1">
+                            {gameState === GameState.SLEEPING && <Moon size={12} />}
+                            {stats.caffeine < 20 && <Coffee size={12} className="animate-pulse" />}
+                            {stats.relax < 20 && <div className="text-[9px] animate-pulse">STRESS</div>}
+                          </div>
+                    </div>
+
+                    {/* MESSAGE */}
+                    {isMessageVisible && (
+                        <div className={`absolute top-8 md:top-10 w-[95%] p-2 md:p-3 text-[9px] md:text-[10px] leading-tight text-center border-2 shadow-md z-30 rounded-md animate-in fade-in zoom-in duration-300 ${location === Location.VILLA_PANZA ? 'bg-pink-900 text-pink-100 border-pink-500' : 'bg-white text-black border-black'}`}>
+                        {message}
+                        </div>
+                    )}
+
+                    {/* FERRET */}
+                    <div className={`w-32 h-32 md:w-40 md:h-40 relative transition-opacity ${menuState !== 'IDLE' ? 'opacity-20' : 'opacity-100'} ${location === Location.VILLA_PANZA ? 'grayscale contrast-125' : ''}`}>
+                        <PixelFerret state={gameState} frame={frame} />
+                        {stats.poopCount > 0 && <div className="absolute bottom-2 right-0 text-3xl animate-pulse">💩</div>}
+                        {interactionEmoji && (
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="text-5xl md:text-6xl animate-[bounce_1s_ease-in-out_infinite] opacity-90 filter drop-shadow-lg">
+                              {interactionEmoji}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+
+                    {/* MENUS */}
+                    {menuState !== 'IDLE' && (
+                        <div className="absolute inset-0 flex items-center justify-center z-40">
+                            <div className={`border-2 p-3 w-[85%] shadow-[4px_4px_0px_rgba(0,0,0,0.2)] ${location === Location.VILLA_PANZA ? 'bg-black border-pink-500' : 'bg-[#e0f0e0] border-black'}`}>
+                                <ul className={`text-xs md:text-sm font-bold ${theme.textMain}`}>
+                                    {getCurrentMenuList().map((opt, i) => (
+                                        <li key={opt} className={`px-2 py-1 mb-1 ${i === menuIndex ? (location === Location.VILLA_PANZA ? 'bg-pink-700 text-white' : 'bg-black text-white') : ''}`}>
+                                            {i === menuIndex ? '> ' : '  '}{opt}
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* BRANDING */}
+            <div className={`mt-auto mb-2 font-bold text-lg md:text-xl tracking-[0.2em] opacity-50 ${location === Location.VILLA_PANZA ? 'text-pink-500 animate-pulse' : 'text-black/40'}`}>
+              {theme.branding}
+            </div>
+
+            {/* CONTROLS */}
+            <div className="flex justify-between w-[90%] md:w-[80%] md:max-w-[300px] mt-2 px-4 pb-4 shrink-0">
+                <div className="flex flex-col gap-2 md:gap-3 justify-center">
+                      <button onClick={handleUp} className="w-12 h-12 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronUp size={24} /></button>
+                      <button onClick={handleDown} className="w-12 h-12 md:w-12 md:h-12 bg-neutral-800 rounded flex items-center justify-center shadow-[0_4px_0_#1a1a1a] active:translate-y-1 active:shadow-none hover:bg-neutral-700 transition-all text-neutral-400 touch-manipulation"><ChevronDown size={24} /></button>
+                </div>
+
+                <div className="flex gap-4 md:gap-6 items-end mb-2 md:rotate-[-10deg]">
+                      <div className="flex flex-col items-center gap-1 md:translate-y-6">
+                          <button onClick={handleBack} className="w-14 h-14 md:w-14 md:h-14 bg-red-600 rounded-full shadow-[0_5px_0_#991b1b] active:shadow-none active:translate-y-1 active:bg-red-700 transition-all flex items-center justify-center text-red-900 font-bold text-xl touch-manipulation">B</button>
+                      </div>
+                      <div className="flex flex-col items-center gap-1">
+                          <button onClick={handleConfirm} className="w-14 h-14 md:w-14 md:h-14 bg-blue-600 rounded-full shadow-[0_5px_0_#1e40af] active:shadow-none active:translate-y-1 active:bg-blue-700 transition-all flex items-center justify-center text-blue-900 font-bold text-xl touch-manipulation">A</button>
+                      </div>
+                </div>
+            </div>
+          </div>
       </div>
 
       <MusicPlayer playlist={getCurrentPlaylist()} theme={theme} />
@@ -591,3 +575,4 @@ const App: React.FC = () => {
 };
 
 export default App;
+
