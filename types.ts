@@ -20,13 +20,13 @@ export interface Quote {
   text: string;
   source: string;
   // Category maps to locations: 'faccianuvola'->Bergamo, 'kerala'->Greece, 'panza'->Villa Panza, 'system'->Anywhere
-  category: 'faccianuvola' | 'kerala' | 'panza' | 'system'; 
+  category: 'faccianuvola' | 'kerala' | 'panza' | 'system';
+  reference?: string; // Song title or specific context
 }
 
 export interface Stats {
   hunger: number; // 0-100
   happiness: number; // 0-100
-  // Energy removed as per request
   caffeine: number; // 0-100
   relax: number; // 0-100
   poopCount: number;
@@ -35,5 +35,5 @@ export interface Stats {
 export interface Track {
   title: string;
   artist: string;
-  src: string; // Relative path to audio file
+  src: string; // URL to audio file
 }

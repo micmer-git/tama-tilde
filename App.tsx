@@ -1,10 +1,10 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import PixelFerret from './components/PixelFerret';
 import MusicPlayer from './components/MusicPlayer';
 import { GameState, Stats, Quote, Location } from './types';
 import { QUOTES, FULL_PLAYLIST } from './constants';
-import { Utensils, Zap, Heart, Trash2, Moon, MessageSquare, Battery, Coffee, Smile, ChevronUp, ChevronDown, MapPin, Plane } from 'lucide-react';
+import { Utensils, Zap, Heart, Trash2, Moon, MessageSquare, Battery, Coffee, Smile, ChevronUp, ChevronDown, MapPin, Plane, X } from 'lucide-react';
 
 const USER_NAME = "Tilde";
 
@@ -29,6 +29,7 @@ const App: React.FC = () => {
   const [isMessageVisible, setIsMessageVisible] = useState(false);
   const [location, setLocation] = useState<Location>(Location.BERGAMO);
   const [interactionEmoji, setInteractionEmoji] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(true);
   
   const tickRef = useRef<number | null>(null);
 
@@ -40,7 +41,8 @@ const App: React.FC = () => {
       case Location.GREECE:
         return ['Pita Gyros', 'Zuppa Oporto', 'Caffè Sabbioso'];
       case Location.INDIA:
-        return ['Dahl Patate', 'Palak Spinaci', 'Lassi', 'Yogurt Greco'];
+        // India specific items
+        return ['Dahl Patate', 'Palak Spinaci', 'Chai', 'Burro d\'arachidi Penny'];
       case Location.VILLA_PANZA:
         return ['Avocado', 'Uova e Pepe', 'Caffè']; 
       case Location.BERGAMO:
@@ -74,7 +76,7 @@ const App: React.FC = () => {
     return pool[Math.floor(Math.random() * pool.length)];
   };
 
-  const showQuote = (forcedQuote?: string, duration = 4000) => {
+  const showQuote = (forcedQuote?: string, duration = 6000) => { // Duration increased for readability
     if (gameState === GameState.DEAD) return;
     
     let text = "";
@@ -82,7 +84,9 @@ const App: React.FC = () => {
       text = forcedQuote;
     } else {
       const q = getRandomQuote();
-      if (q.text.includes('🎵')) {
+      if (q.reference) {
+         text = `${q.text} (${q.reference})`;
+      } else if (q.text.includes('🎵')) {
           text = q.text;
       } else if (Math.random() < 0.4 && q.category !== 'system') {
           text = `${USER_NAME}, "${q.text.toLowerCase()}"`;
@@ -109,13 +113,13 @@ const App: React.FC = () => {
       setFrame(f => (f === 0 ? 1 : 0));
 
       // Passive Commentary
-      if (gameState === GameState.IDLE && !isMessageVisible) {
+      if (gameState === GameState.IDLE && !isMessageVisible && !showIntro) {
           if (Math.random() < 0.05) {
              showQuote();
           }
       }
 
-      if (gameState !== GameState.DEAD) {
+      if (gameState !== GameState.DEAD && !showIntro) {
         setStats(prev => {
           const newCaffeine = Math.max(0, prev.caffeine - 0.04);
           const newRelax = Math.max(0, prev.relax - 0.03);
@@ -160,7 +164,7 @@ const App: React.FC = () => {
     return () => {
       if (tickRef.current) clearInterval(tickRef.current);
     };
-  }, [gameState, isMessageVisible, location]);
+  }, [gameState, isMessageVisible, location, showIntro]);
 
 
   // --- CONTROLS ---
@@ -175,19 +179,19 @@ const App: React.FC = () => {
   };
 
   const handleUp = () => {
-    if (gameState === GameState.DEAD) return;
+    if (gameState === GameState.DEAD || showIntro) return;
     const list = getCurrentMenuList();
     if (list.length > 0) setMenuIndex(prev => (prev - 1 + list.length) % list.length);
   };
 
   const handleDown = () => {
-    if (gameState === GameState.DEAD) return;
+    if (gameState === GameState.DEAD || showIntro) return;
     const list = getCurrentMenuList();
     if (list.length > 0) setMenuIndex(prev => (prev + 1) % list.length);
   };
 
   const handleConfirm = () => {
-    if (gameState === GameState.DEAD) return;
+    if (gameState === GameState.DEAD || showIntro) return;
 
     if (menuState === 'IDLE') {
         setMenuState('MAIN_MENU');
@@ -205,7 +209,7 @@ const App: React.FC = () => {
   };
 
   const handleBack = () => {
-    if (gameState === GameState.DEAD) return;
+    if (gameState === GameState.DEAD || showIntro) return;
     setMenuState('IDLE');
     setMenuIndex(0);
   };
@@ -251,6 +255,16 @@ const App: React.FC = () => {
                 happiness += 2;
                 triggerAnimation("☕");
                 showQuote(location === Location.GREECE ? "Caffè sabbioso." : `Carburante.`);
+            } else if (selectedFood.includes('Chai')) {
+                caffeine = Math.min(100, caffeine + 40);
+                happiness += 5;
+                triggerAnimation("☕");
+                showQuote(`Come quello di casa.`);
+            } else if (selectedFood.includes('Burro')) {
+                hunger = Math.min(100, hunger + 60);
+                happiness += 10;
+                triggerAnimation("🥜");
+                showQuote(`Burro d'arachidi del Penny.`);
             } else if (selectedFood.includes('Avocado')) {
                 hunger = Math.min(100, hunger + 40);
                 happiness += 5;
@@ -339,10 +353,23 @@ const App: React.FC = () => {
     const hour = new Date().getHours();
     const isEarly = hour < 9;
     
-    if (isEarly) showQuote("Sessione mattutina con Erica da Rovetta.", 3000);
-    else showQuote("Yoga con Erica da Rovetta. Inspira...", 3000);
+    // Greece Logic
+    if (location === Location.GREECE) {
+       showQuote("Corsetta tra Renzo Piano e l'acropoli. 🏛️🏃", 6000);
+       triggerAnimation("🏃");
+    }
+    // India Logic
+    else if (location === Location.INDIA) {
+       showQuote("Erica non sopporta i fumi di Varanasi! 😤", 6000);
+       triggerAnimation("🔥"); // Crazier
+    }
+    // Standard Logic
+    else {
+       if (isEarly) showQuote("Sessione mattutina con Erica da Rovetta.", 4000);
+       else showQuote("Yoga con Erica da Rovetta. Inspira...", 4000);
+       triggerAnimation("🧘");
+    }
     
-    triggerAnimation("🧘");
     setStats(prev => ({ ...prev, relax: Math.min(100, prev.relax + 40) }));
   };
 
@@ -419,7 +446,6 @@ const App: React.FC = () => {
   };
 
   const theme = getTheme();
-  const currentPlaylist = useMemo(() => getCurrentPlaylist(), [location]);
 
   const renderSideStat = (label: string, value: number, color: string, icon: React.ReactNode) => (
     <div className="flex flex-col items-center gap-1">
@@ -437,14 +463,36 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className={`h-[100dvh] flex flex-col items-center py-3 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-hidden`}>
+    <div className={`h-[100dvh] w-full flex flex-col items-center py-2 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-hidden relative touch-none`}>
+      
+      {/* STARTUP POPUP */}
+      {showIntro && (
+        <div className="absolute inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-6 animate-in fade-in duration-500">
+           <div className={`max-w-xs w-full bg-neutral-900 border-2 ${theme.highlight.replace('text-', 'border-')} p-6 rounded-xl shadow-2xl text-center flex flex-col gap-4`}>
+              <h2 className={`text-xl font-bold ${theme.highlight} tracking-widest uppercase`}>Furettogotchi v2.0</h2>
+              <div className="text-xs text-neutral-400 font-mono space-y-2">
+                 <p>Release: November 2024</p>
+                 <div className="w-full h-px bg-white/10 my-2"></div>
+                 <p className="text-white">NEXT UPDATE:</p>
+                 <p className="text-lg font-bold text-yellow-400 animate-pulse">29 DEC 2025</p>
+                 <p>(India Trip 🇮🇳)</p>
+              </div>
+              <button 
+                onClick={() => setShowIntro(false)}
+                className={`mt-4 py-3 px-6 bg-white text-black font-bold rounded hover:scale-105 active:scale-95 transition-all`}
+              >
+                START
+              </button>
+           </div>
+        </div>
+      )}
 
       {/* HEADER: Smaller on mobile, constrained height */}
       <h1 className="text-xl md:text-3xl mb-2 text-center text-white/90 tracking-[0.2em] md:tracking-[0.3em] uppercase text-shadow-glow font-bold shrink-0">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
       </h1>
 
-      <div className="flex-1 w-full max-w-[520px] flex flex-col items-center gap-2 justify-center relative min-h-0">
+      <div className="flex-1 w-full max-w-[500px] flex flex-col items-center justify-center relative min-h-0">
           
           {/* STATS: MOBILE (Compact grid at top) */}
           <div className="md:hidden w-full grid grid-cols-4 gap-4 mb-2 shrink-0 h-[80px]">
@@ -466,25 +514,26 @@ const App: React.FC = () => {
 
           {/* SHELL: Responsive container */}
           <div className={`
-            relative
-            flex-1 w-full max-h-[620px]
+            relative 
+            flex-1 w-full max-h-[600px]
             md:aspect-[3/4] md:flex-none md:h-[520px] md:w-auto
             rounded-[2rem] md:rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%]
-            border-[8px] md:border-[12px]
-            flex flex-col items-center
-            pt-4 md:pt-20 pb-4 md:pb-10
-            overflow-hidden
-            transition-all duration-700 z-10
+            border-[8px] md:border-[12px] 
+            flex flex-col items-center 
+            pt-4 md:pt-20 pb-4 md:pb-10 
+            overflow-hidden 
+            transition-all duration-700 z-10 
+            mb-12 md:mb-0 /* Space for mobile player */
             ${theme.shell} ${theme.shellShadow}
           `}>
             
             {/* SCREEN CONTAINER - Scales with Shell */}
             <div className={`
-              w-[90%] md:w-[260px]
+              w-[90%] md:w-[260px] 
               aspect-square md:aspect-auto md:h-[240px]
-              rounded-xl border-4 relative p-3
-              flex flex-col justify-between
-              transition-colors duration-700
+              rounded-xl border-4 relative p-3 
+              flex flex-col justify-between 
+              transition-colors duration-700 
               mx-auto
               ${theme.inner}
             `}>
@@ -568,13 +617,10 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      <div className="w-full max-w-[520px] mt-1">
-        <MusicPlayer playlist={currentPlaylist} theme={theme} />
-      </div>
+      <MusicPlayer playlist={getCurrentPlaylist()} theme={theme} />
 
     </div>
   );
 };
 
 export default App;
-

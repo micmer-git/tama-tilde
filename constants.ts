@@ -1,19 +1,21 @@
 
 import { Quote, Track } from './types';
 
+const AUDIO_BASE = "https://micmer-git.github.io/audio/";
+
 // Full Playlist - App will filter based on location
 export const FULL_PLAYLIST: Track[] = [
   // KERALA DUST (Greece Vibe)
-  { title: 'Nevada', artist: 'Kerala Dust', src: './audio/nevada.mp3' },
-  { title: 'Closer', artist: 'Kerala Dust', src: './audio/closer.mp3' },
+  { title: 'Nevada', artist: 'Kerala Dust', src: `${AUDIO_BASE}nevada.mp3` },
+  { title: 'Closer', artist: 'Kerala Dust', src: `${AUDIO_BASE}closer.mp3` },
   
   // FACCIANUVOLA (Bergamo Vibe)
-  { title: 'Verticale', artist: 'Faccianuvola', src: './audio/faccianuvola_verticale.mp3' },
-  { title: 'Primavera', artist: 'Faccianuvola', src: './audio/faccianuvola_primavera.mp3' },
-  { title: 'Albero', artist: 'Eugenio in Via Di Gioia', src: './audio/albero.mp3' },
+  { title: 'Verticale', artist: 'Faccianuvola', src: `${AUDIO_BASE}faccianuvola_verticale.mp3` },
+  { title: 'Primavera', artist: 'Faccianuvola', src: `${AUDIO_BASE}faccianuvola_primavera.mp3` },
+  { title: 'Albero', artist: 'Eugenio in Via Di Gioia', src: `${AUDIO_BASE}albero.mp3` },
 
   // INDIA VIBE
-  { title: 'Mantra', artist: 'Spiritual Eye', src: './audio/india.mp3' }
+  { title: 'Mantra', artist: 'Spiritual Eye', src: `${AUDIO_BASE}india.mp3` }
 ];
 
 export const QUOTES: Quote[] = [
@@ -25,26 +27,39 @@ export const QUOTES: Quote[] = [
   { text: "Ho bisogno di vacanza.", source: "Furetto", category: "system" },
 
   // --- BERGAMO (Faccianuvola Lyrics) ---
-  { text: "Tutto si muove, ma io resto fermo qui.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "🎵 Le piante crescono anche senza di noi... 🎵", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Ho perso il conto dei giorni in questa stanza blu.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Respirare piano per non fare rumore.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "La città è vuota, o sono io che non ci sono?", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "🎵 Siamo solo pixel in un render sbagliato... 🎵", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Cercami dove non c'è connessione.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Il caffè è freddo, come le tue risposte.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Vorrei essere un file da cancellare.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "🎵 Luci al neon che tagliano la nebbia... 🎵", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "L'attesa è l'unica cosa che ci rimane.", source: "Faccianuvola", category: "faccianuvola" },
-  { text: "Non siamo ancora pronti per quel futuro.", source: "Faccianuvola", category: "faccianuvola" },
+  { text: "Disperata gioventù non vuol tornare a casa sua.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
+  { text: "Restiamo perpendicolari al mondo che ci guarda storto.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Non avremo più paura di rincorrerci per gioco.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Tornerò sulle mie impronte soltanto per non perdermi.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Passeranno giorni e settimane tra le nuvole.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Acqua sotto al ponte, prima o poi sarò di nuovo da te.", source: "Faccianuvola", category: "faccianuvola", reference: "Albero" },
+  { text: "C'era una frase che ti dovevo dire.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
+  { text: "Mi piacerebbe incontrarti dove il mio cielo finisce.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "E il tempo scorre all'insù.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Il nostro amore era un singhiozzo della dolce ingenuità.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Un giorno che era già finito e che mai più ritornerà.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Poi tu scendi dalla luna.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
+  { text: "Poi ti porto lungo il fiume e ti grido che ti amo.", source: "Faccianuvola", category: "faccianuvola", reference: "Albero" },
+  { text: "Parlerò di te come dei vestiti che mettevo per dormire.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Come una storia che non voglio raccontare.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
+  { text: "Un uccellino sul sentiero mi sussurra: non è vero che non tornerai.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Mi ricorderò di noi come due bambini che giocavano alle corse.", source: "Faccianuvola", category: "faccianuvola", reference: "Albero" },
+  { text: "A nascondino nelle vigne o sotto a un ponte.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Vorrei un'ora come prima, degli occhi da bambina.", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Vorrei la luna piena e delle mani con cui toccarla ancora.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "Il vento del mattino mi sveglia nei sogni in cui non ci sei.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
+  { text: "Ci prenderemo per la mano e torneremo piano piano.", source: "Faccianuvola", category: "faccianuvola", reference: "Albero" },
+  { text: "Non ricordi il giorno in cui gridammo alla felicità?", source: "Faccianuvola", category: "faccianuvola", reference: "Primavera" },
+  { text: "Lunghi baci tra i cespugli.", source: "Faccianuvola", category: "faccianuvola", reference: "Verticale" },
+  { text: "La faccia nella brina.", source: "Faccianuvola", category: "faccianuvola", reference: "Disperata Gioventù" },
   
   // --- GREECE (Kerala Dust Lyrics) ---
-  { text: "The moon is a heavy thing to carry.", source: "Kerala Dust", category: "kerala" },
-  { text: "🎵 Shake off the dust... 🎵", source: "Kerala Dust", category: "kerala" },
-  { text: "Late night, Berlin lights.", source: "Kerala Dust", category: "kerala" },
-  { text: "Pulse ticking like a clock.", source: "Kerala Dust", category: "kerala" },
-  { text: "Different spaces, different times.", source: "Kerala Dust", category: "kerala" },
-  { text: "🎵 I put a spell on you... 🎵", source: "Kerala Dust", category: "kerala" },
+  { text: "The moon is a heavy thing to carry.", source: "Kerala Dust", category: "kerala", reference: "Nevada" },
+  { text: "🎵 Shake off the dust... 🎵", source: "Kerala Dust", category: "kerala", reference: "Closer" },
+  { text: "Late night, Berlin lights.", source: "Kerala Dust", category: "kerala", reference: "Nevada" },
+  { text: "Pulse ticking like a clock.", source: "Kerala Dust", category: "kerala", reference: "Closer" },
+  { text: "Different spaces, different times.", source: "Kerala Dust", category: "kerala", reference: "Nevada" },
+  { text: "🎵 I put a spell on you... 🎵", source: "Kerala Dust", category: "kerala", reference: "Closer" },
 
   // --- VILLA PANZA (Light, Space, Minimalism) ---
   { text: "La luce di Dan Flavin cambia il mio colore.", source: "Villa Panza", category: "panza" },
