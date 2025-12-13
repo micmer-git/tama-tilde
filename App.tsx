@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import PixelFerret from './components/PixelFerret';
 import MusicPlayer from './components/MusicPlayer';
 import { GameState, Stats, Quote, Location } from './types';
@@ -419,6 +419,7 @@ const App: React.FC = () => {
   };
 
   const theme = getTheme();
+  const currentPlaylist = useMemo(() => getCurrentPlaylist(), [location]);
 
   const renderSideStat = (label: string, value: number, color: string, icon: React.ReactNode) => (
     <div className="flex flex-col items-center gap-1">
@@ -436,14 +437,14 @@ const App: React.FC = () => {
   );
 
   return (
-    <div className={`h-[100dvh] flex flex-col items-center py-2 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-hidden`}>
-      
+    <div className={`h-[100dvh] flex flex-col items-center py-3 px-4 ${theme.bg} text-neutral-200 transition-colors duration-1000 overflow-hidden`}>
+
       {/* HEADER: Smaller on mobile, constrained height */}
       <h1 className="text-xl md:text-3xl mb-2 text-center text-white/90 tracking-[0.2em] md:tracking-[0.3em] uppercase text-shadow-glow font-bold shrink-0">
         Furettogotchi <span className={theme.highlight}>Pixel</span>
       </h1>
 
-      <div className="flex-1 w-full max-w-[500px] flex flex-col items-center justify-center relative min-h-0">
+      <div className="flex-1 w-full max-w-[520px] flex flex-col items-center gap-2 justify-center relative min-h-0">
           
           {/* STATS: MOBILE (Compact grid at top) */}
           <div className="md:hidden w-full grid grid-cols-4 gap-4 mb-2 shrink-0 h-[80px]">
@@ -465,26 +466,25 @@ const App: React.FC = () => {
 
           {/* SHELL: Responsive container */}
           <div className={`
-            relative 
-            flex-1 w-full max-h-[600px]
+            relative
+            flex-1 w-full max-h-[620px]
             md:aspect-[3/4] md:flex-none md:h-[520px] md:w-auto
             rounded-[2rem] md:rounded-[50%_50%_45%_45%_/_55%_55%_40%_40%]
-            border-[8px] md:border-[12px] 
-            flex flex-col items-center 
-            pt-4 md:pt-20 pb-4 md:pb-10 
-            overflow-hidden 
-            transition-all duration-700 z-10 
-            mb-16 md:mb-0 /* Space for mobile player */
+            border-[8px] md:border-[12px]
+            flex flex-col items-center
+            pt-4 md:pt-20 pb-4 md:pb-10
+            overflow-hidden
+            transition-all duration-700 z-10
             ${theme.shell} ${theme.shellShadow}
           `}>
             
             {/* SCREEN CONTAINER - Scales with Shell */}
             <div className={`
-              w-[90%] md:w-[260px] 
+              w-[90%] md:w-[260px]
               aspect-square md:aspect-auto md:h-[240px]
-              rounded-xl border-4 relative p-3 
-              flex flex-col justify-between 
-              transition-colors duration-700 
+              rounded-xl border-4 relative p-3
+              flex flex-col justify-between
+              transition-colors duration-700
               mx-auto
               ${theme.inner}
             `}>
@@ -568,7 +568,9 @@ const App: React.FC = () => {
           </div>
       </div>
 
-      <MusicPlayer playlist={getCurrentPlaylist()} theme={theme} />
+      <div className="w-full max-w-[520px] mt-1">
+        <MusicPlayer playlist={currentPlaylist} theme={theme} />
+      </div>
 
     </div>
   );
